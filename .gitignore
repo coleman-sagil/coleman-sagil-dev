@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Wrangler local state / build output
+.wrangler/
+dist/
+
+# Secrets / local env (never commit real values)
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+
+# Editor / OS cruft
+.DS_Store
+*.log
+npm-debug.log*
