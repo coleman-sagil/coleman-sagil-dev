@@ -5,21 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>IntuiMotion &mdash; coleman-sagil.dev</title>
   <meta name="description" content="Gesture-driven mouse, macro, and media control for the original Leap Motion Controller, built on Ultraleap's Gemini hand tracking stack.">
+  <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
 
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/">Home</a></li>
+        <li><a href="https://local-llm.coleman-sagil.dev/">Local LLM</a></li>
+        <li><a href="https://intuimotion.coleman-sagil.dev/" aria-current="page">IntuiMotion</a></li>
+        <li><a href="https://oanda.coleman-sagil.dev/">OANDA</a></li>
+      </ul>
+    </div>
+  </nav>
+
   <header class="hero">
     <div class="wrap">
-      <p class="eyebrow">Personal project &mdash; gesture control</p>
-      <h1>IntuiMotion</h1>
-      <p class="lede">
+      <p class="eyebrow" data-reveal>Personal project &mdash; gesture control</p>
+      <h1 data-reveal>IntuiMotion</h1>
+      <p class="lede" data-reveal>
         Touch-free mouse, macro, and media control for the original Leap
         Motion Controller. An open, still hand becomes a pointer, a pinch
         becomes a mouse button, and a swipe changes the track, all riding
         on Ultraleap's Gemini hand tracking stack.
       </p>
-      <div class="badges">
+      <div class="badges" data-reveal>
         <span class="badge"><span class="dot dot-live"></span>Gesture pipeline: confirmed on live hardware</span>
         <span class="badge"><span class="dot dot-tested"></span>Calibration solvers: unit-tested, synthetic only</span>
         <span class="badge"><span class="dot dot-progress"></span>Camera screen detection: in progress</span>
@@ -31,8 +48,8 @@
     <div class="wrap">
 
       <section id="overview">
-        <h2>What it is</h2>
-        <p class="section-intro">
+        <h2 data-reveal>What it is</h2>
+        <p class="section-intro" data-reveal>
           A small pointer replacement: wave your hand in the air near a Leap
           Motion sensor and it moves your cursor, clicks, drags, scrolls
           volume, and skips tracks, no touchpad, mouse, or keyboard involved.
@@ -46,7 +63,7 @@
           command) defined in a plain config file, no code changes needed to
           add a new one.
         </p>
-        <div class="note">
+        <div class="note" data-reveal>
           <p>
             <strong>No live demo on this page.</strong> This is a write-up
             of the project as it stands, not a control panel; running it for
@@ -57,13 +74,13 @@
       </section>
 
       <section id="gestures">
-        <h2>Gesture vocabulary</h2>
-        <p class="section-intro">
+        <h2 data-reveal>Gesture vocabulary</h2>
+        <p class="section-intro" data-reveal>
           The default gesture-to-action mapping. Idle-mode gestures fire
           while you're not pointing at anything; pointer-mode gestures fire
           once an open hand has engaged the cursor.
         </p>
-        <div class="table-scroll">
+        <div class="table-scroll" data-reveal>
           <table>
             <thead>
               <tr>
@@ -119,7 +136,7 @@
             </tbody>
           </table>
         </div>
-        <div class="note">
+        <div class="note" data-reveal>
           <p>
             Mouse buttons mirror pinch state directly instead of firing a
             one-shot click: press on pinch-start, release on pinch-end. A
@@ -145,41 +162,41 @@
       </section>
 
       <section id="architecture">
-        <h2>Architecture</h2>
-        <p class="section-intro">
+        <h2 data-reveal>Architecture</h2>
+        <p class="section-intro" data-reveal>
           Frame data flows one direction, from sensor to OS action:
         </p>
         <ol class="pipeline">
-          <li>
+          <li data-reveal style="--reveal-delay: 0ms">
             <div class="step-name">Leap Motion Controller (USB)</div>
             <div class="step-desc">the sensor itself</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 40ms">
             <div class="step-name">Ultraleap Hand Tracking Service</div>
             <div class="step-desc">system daemon doing the actual hand tracking</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 80ms">
             <div class="step-name">LeapC Python bindings</div>
             <div class="step-desc"><code>leap.Connection</code> / <code>leap.Listener</code></div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 120ms">
             <div class="step-name">TrackingListener</div>
             <div class="step-desc">per-hand frame callback</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 160ms">
             <div class="step-name">GestureInterpreter</div>
             <div class="step-desc">raw hand data &rarr; discrete gesture events + mode (idle / pointer)</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 200ms">
             <div class="step-name">ActionDispatcher</div>
             <div class="step-desc">gesture name &rarr; config-mapped action</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 240ms">
             <div class="step-name">Mouse / media / macro actions</div>
             <div class="step-desc">pynput mouse, media keys, keystrokes, or a shell command</div>
           </li>
         </ol>
-        <div class="note">
+        <div class="note" data-reveal>
           <p>
             Two things skip that pipeline on purpose. Pointer-mode cursor
             movement is continuous per-frame motion, not a discrete
@@ -193,14 +210,14 @@
       </section>
 
       <section id="calibration">
-        <h2>Screen calibration</h2>
-        <p class="section-intro">
+        <h2 data-reveal>Screen calibration</h2>
+        <p class="section-intro" data-reveal>
           Two approaches to teaching the app where your screen physically
           is. They're not two attempts at the same problem, they solve
           different versions of it.
         </p>
         <div class="card-grid">
-          <div class="card">
+          <div class="card" data-reveal style="--reveal-delay: 0ms">
             <div class="tag-row">
               <span class="badge"><span class="dot dot-live"></span>Newer, recommended for monitor/TV</span>
             </div>
@@ -225,7 +242,7 @@
               motion has happened.
             </p>
           </div>
-          <div class="card">
+          <div class="card" data-reveal style="--reveal-delay: 80ms">
             <div class="tag-row">
               <span class="badge"><span class="dot dot-progress"></span>Needs real-hardware validation</span>
             </div>
@@ -255,7 +272,7 @@
             </p>
           </div>
         </div>
-        <div class="note">
+        <div class="note" data-reveal>
           <p>
             Edge tracing needs something physical to trace against, so
             ray-walking stays in the codebase for scenarios without a
@@ -266,11 +283,11 @@
       </section>
 
       <section id="camera">
-        <h2>Camera-based screen detection</h2>
-        <div class="badges">
+        <h2 data-reveal>Camera-based screen detection</h2>
+        <div class="badges" data-reveal>
           <span class="badge"><span class="dot dot-progress"></span>In progress, not wired in yet</span>
         </div>
-        <p class="section-intro">
+        <p class="section-intro" data-reveal>
           An OpenCV-based screen finder, absorbed from a standalone
           computer-vision prototype once that project's camera and
           detection logic moved onto the same machine as the rest of
@@ -298,30 +315,30 @@
       </section>
 
       <section id="status">
-        <h2>Status &amp; known gaps</h2>
-        <p class="section-intro">
+        <h2 data-reveal>Status &amp; known gaps</h2>
+        <p class="section-intro" data-reveal>
           What's confirmed against real hardware, what's tested but not
           field-proven, and what's deliberately left untuned for later.
         </p>
         <div class="status-grid">
-          <div class="status-card">
+          <div class="status-card" data-reveal style="--reveal-delay: 0ms">
             <span class="badge"><span class="dot dot-live"></span>Confirmed</span>
             <h4>Core gesture pipeline</h4>
             <p>Connects to a real sensor, tracks a real hand, and dispatches real mouse and media actions end to end.</p>
           </div>
-          <div class="status-card">
+          <div class="status-card" data-reveal style="--reveal-delay: 80ms">
             <span class="badge"><span class="dot dot-tested"></span>Tested, not field-proven</span>
             <h4>Calibration &amp; gesture logic</h4>
             <p>The state machine, config loading, and both calibration solvers are covered with fake hand data and synthetic geometry, not yet run against a real calibration session.</p>
           </div>
-          <div class="status-card">
+          <div class="status-card" data-reveal style="--reveal-delay: 160ms">
             <span class="badge"><span class="dot dot-progress"></span>In progress</span>
             <h4>Camera screen detection</h4>
             <p>Detection logic exists and is unit-tested against synthetic frames; not yet wired into the live pipeline or run against a real camera.</p>
           </div>
         </div>
-        <h3>Known gaps</h3>
-        <ul class="plain">
+        <h3 data-reveal>Known gaps</h3>
+        <ul class="plain" data-reveal>
           <li>
             <strong>Cursor mapping bounds are untuned guesses.</strong>
             Expect jitter or dead zones until they're adjusted against a
@@ -366,12 +383,40 @@
     </div>
   </main>
 
-  <footer>
-    <div class="wrap">
-      <p>IntuiMotion is a personal engineering project, not a product.</p>
-      <p>This page is a write-up of the current build; it doesn't expose any live control surface.</p>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p>IntuiMotion is a personal engineering project, not a product.</p>
+        <p>This page is a write-up of the current build; it doesn't expose any live control surface.</p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/">Home</a>
+        <a href="https://local-llm.coleman-sagil.dev/">Local LLM</a>
+        <a href="https://intuimotion.coleman-sagil.dev/">IntuiMotion</a>
+        <a href="https://oanda.coleman-sagil.dev/">OANDA</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal project write-ups</p>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
 
 </body>
 </html>

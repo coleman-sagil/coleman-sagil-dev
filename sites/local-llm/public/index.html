@@ -5,20 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Local LLM &mdash; coleman-sagil.dev</title>
   <meta name="description" content="Running large mixture-of-experts language models locally, entirely offline, on a single consumer 8GB GPU &mdash; a llama.cpp-based inference stack with a streaming CLI and browser GUI.">
+  <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
-  <div class="wrap">
-    <header class="hero">
-      <p class="eyebrow">Self-hosted inference</p>
-      <h1>Local LLM</h1>
-      <p class="lede">
+
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/">Home</a></li>
+        <li><a href="https://local-llm.coleman-sagil.dev/" aria-current="page">Local LLM</a></li>
+        <li><a href="https://intuimotion.coleman-sagil.dev/">IntuiMotion</a></li>
+        <li><a href="https://oanda.coleman-sagil.dev/">OANDA</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>Self-hosted inference</p>
+      <h1 data-reveal>Local LLM</h1>
+      <p class="lede" data-reveal>
         A personal project running large mixture-of-experts language models
         entirely offline, on a desktop with a single consumer-grade 8GB GPU.
         No cloud API, no subscription, no data leaving the machine &mdash;
         just a model file, an inference server, and two clients that talk to it.
       </p>
-      <div class="badges">
+      <div class="badges" data-reveal>
         <span class="badge">llama.cpp</span>
         <span class="badge">CUDA</span>
         <span class="badge">Python</span>
@@ -26,23 +44,27 @@
         <span class="badge">Model Context Protocol</span>
         <span class="badge">Offline-first</span>
       </div>
-      <div class="scope-note">
+      <div class="scope-note" data-reveal>
         <strong>This page is a write-up, not a demo.</strong> Every model
         server described here runs on personal hardware and is not exposed
         to the internet &mdash; there is no live endpoint on this page to
         connect to.
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main>
+  <main>
+    <div class="wrap">
+
       <section id="overview">
-        <h2>What this is</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>01 &middot; Overview</p>
+        <h2 data-reveal>What this is</h2>
+        <p class="section-intro" data-reveal>
           The whole project rests on one idea: a model file on disk becomes
           a live HTTP server, and everything else &mdash; every tool, every
           interface &mdash; is just a client of that server.
         </p>
-        <p>
+        <p data-reveal>
           Three GGUF model files sit on disk: <strong>Llama&nbsp;4&nbsp;Scout</strong>,
           <strong>Qwen3&#8209;Coder&#8209;Next</strong>, and <strong>Qwen3&#8209;Next&#8209;80B&#8209;A3B&#8209;Instruct</strong>.
           A GGUF file is inert: weights plus metadata, nothing more, until
@@ -58,7 +80,7 @@
           is what lets a plain HTTP client speak to a local model exactly
           the way it would speak to a cloud one.
         </p>
-        <p>
+        <p data-reveal>
           Two independent front ends sit on top of that API: a terminal
           chat client and a lightweight browser-based GUI. Neither one
           knows the other exists, and they don't share code &mdash; they
@@ -71,15 +93,16 @@
       </section>
 
       <section id="the-trick">
-        <h2>The trick: fitting an 80B-parameter model into 8GB of VRAM</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>02 &middot; The offload trick</p>
+        <h2 data-reveal>Fitting an 80B-parameter model into 8GB of VRAM</h2>
+        <p class="section-intro" data-reveal>
           None of these models come close to fitting in 8GB of VRAM as a
           whole &mdash; their GGUF files run 43&ndash;65GB apiece. What
           makes them usable on a small GPU at all is that they're
           <strong>mixture-of-experts (MoE)</strong> architectures, combined
           with a specific offload recipe.
         </p>
-        <p>
+        <p data-reveal>
           A dense model uses every one of its weights on every token it
           processes. An MoE model instead has a large bank of "expert"
           feed-forward sub-networks and a small routing mechanism that
@@ -92,7 +115,7 @@
           one variant fine-tuned for code and the other instruct-tuned
           generally.
         </p>
-        <p>
+        <p data-reveal>
           <code>llama-server</code> exposes two flags that exploit this
           directly: <code>-ngl 999</code> tells it to offload every
           transformer layer it can to the GPU, and <code>--cpu-moe</code>
@@ -101,7 +124,7 @@
           combined effect is a deliberate split:
         </p>
         <div class="card-grid">
-          <div class="card">
+          <div class="card" data-reveal>
             <div class="tag-row">
               <span class="badge"><span class="dot dot-good"></span>GPU &middot; VRAM</span>
             </div>
@@ -111,7 +134,7 @@
               fast memory where they benefit most from GPU throughput.
             </p>
           </div>
-          <div class="card">
+          <div class="card" data-reveal style="--reveal-delay: 80ms;">
             <div class="tag-row">
               <span class="badge"><span class="dot dot-warn"></span>CPU &middot; system RAM</span>
             </div>
@@ -122,7 +145,7 @@
             </p>
           </div>
         </div>
-        <p style="margin-top: 1.5rem;">
+        <p class="trailing-note" data-reveal>
           That's the whole trick that lets an 8GB consumer card meaningfully
           accelerate models many times larger than its own memory. Context
           length trades off against the same VRAM budget, so it's tuned
@@ -132,7 +155,7 @@
           both Qwen variants keep a larger window since their much smaller
           active-parameter footprint leaves more room to begin with.
         </p>
-        <div class="note">
+        <div class="note" data-reveal>
           <p>
             There's also a plain CPU-only mode (<code>-ngl 0</code>,
             nothing offloaded) that never touches the GPU at all. It's
@@ -148,13 +171,14 @@
       </section>
 
       <section id="models">
-        <h2>The models</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>03 &middot; Model roster</p>
+        <h2 data-reveal>The models</h2>
+        <p class="section-intro" data-reveal>
           All three are quantized GGUF builds, chosen to cover a general
           assistant, a coding specialist, and a general-purpose sibling
           built on the coding model's own architecture.
         </p>
-        <div class="table-scroll">
+        <div class="table-scroll" data-reveal>
           <table>
             <thead>
               <tr>
@@ -186,7 +210,7 @@
             </tbody>
           </table>
         </div>
-        <p class="table-caption">
+        <p class="table-caption" data-reveal>
           Qwen3-Coder-Next and Qwen3-Next-80B-A3B-Instruct are the same
           underlying model architecture, fine-tuned for different jobs
           &mdash; which is why they land in the same offload recipe and
@@ -195,21 +219,22 @@
       </section>
 
       <section id="architecture">
-        <h2>Architecture, top to bottom</h2>
+        <p class="eyebrow" data-reveal>04 &middot; Architecture</p>
+        <h2 data-reveal>Top to bottom</h2>
         <ol class="pipeline">
-          <li>
+          <li data-reveal>
             <div class="step-name">Model file (GGUF)</div>
             <div class="step-desc">Weights plus metadata on disk. Inert until loaded &mdash; does nothing by itself.</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 60ms;">
             <div class="step-name">llama-server</div>
             <div class="step-desc">Loads one GGUF file, applies the GPU/CPU offload split above, and exposes it as an OpenAI-compatible HTTP API. One process per running model.</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 120ms;">
             <div class="step-name">Shared API contract</div>
             <div class="step-desc"><code>POST /v1/chat/completions</code>, with the model's own embedded chat template applied automatically. Every client speaks this one shape.</div>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 180ms;">
             <div class="step-name">Front ends</div>
             <div class="step-desc">A terminal CLI and a browser-based GUI, both independent, interchangeable clients of the same contract.</div>
           </li>
@@ -217,8 +242,9 @@
       </section>
 
       <section id="cli">
-        <h2>The CLI: a streaming REPL with real tool-calling</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>05 &middot; Terminal client</p>
+        <h2 data-reveal>The CLI: a streaming REPL with real tool-calling</h2>
+        <p class="section-intro" data-reveal>
           The base client is a straightforward terminal chat loop: a
           <code>you&gt;</code> prompt, the reply streaming back token by
           token over server-sent events, and conversation history kept in
@@ -227,8 +253,8 @@
           session cleanly, and Ctrl+C interrupts mid-stream without
           leaving anything in a broken state.
         </p>
-        <h3>An opt-in MCP tool-calling layer</h3>
-        <p>
+        <h3 data-reveal>An opt-in MCP tool-calling layer</h3>
+        <p data-reveal>
           A separate <code>--tools</code> mode layers a real
           <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol</a>
           client on top of that same chat loop, kept deliberately
@@ -241,7 +267,7 @@
           isn't cosmetic: a couple of the configured servers expose tools
           with names that would otherwise collide.
         </p>
-        <p>
+        <p data-reveal>
           The safety gate is the same for every source, no exceptions:
           every tool call, before it executes, requires a manual y/n
           confirmation. There's no auto-execute path. A local filesystem
@@ -251,7 +277,7 @@
           &mdash; it prints one warning line and continues with whatever
           did connect.
         </p>
-        <div class="note warn">
+        <div class="note warn" data-reveal>
           <p>
             <strong>An honest limitation, found rather than assumed:</strong>
             a merged tool schema can be bigger than these models' context
@@ -271,12 +297,13 @@
       </section>
 
       <section id="gui">
-        <h2>The GUI: a picker, not a rebuilt chat UI</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>06 &middot; Browser client</p>
+        <h2 data-reveal>The GUI: a picker, not a rebuilt chat UI</h2>
+        <p class="section-intro" data-reveal>
           Rather than build a custom chat interface, the GUI leans on the
           one llama.cpp already ships with each model server.
         </p>
-        <p>
+        <p data-reveal>
           A tiny local picker page lists one entry per model. Selecting one
           launches that model's server, in CPU-only mode, if it isn't
           already running, then opens that model's own built-in llama.cpp
@@ -295,14 +322,15 @@
       </section>
 
       <section id="notes">
-        <h2>Three bugs worth remembering</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>07 &middot; Field notes</p>
+        <h2 data-reveal>Three bugs worth remembering</h2>
+        <p class="section-intro" data-reveal>
           A few things that came up building this, kept here because
           they're the kind of thing worth remembering the next time
           something looks similarly broken.
         </p>
         <ul class="notes-list">
-          <li>
+          <li data-reveal>
             <p class="note-title">Wrong endpoint, garbled output</p>
             <p>
               <code>llama-server</code> exposes both a raw completion
@@ -318,7 +346,7 @@
               endpoint with a proper messages array.
             </p>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 60ms;">
             <p class="note-title">Streamed emoji and accents turning to mojibake</p>
             <p>
               The model server's streaming response declares
@@ -334,7 +362,7 @@
               that came back.
             </p>
           </li>
-          <li>
+          <li data-reveal style="--reveal-delay: 120ms;">
             <p class="note-title">A tool schema bigger than the context window</p>
             <p>
               Covered above in the CLI section, but worth restating as its
@@ -350,35 +378,68 @@
       </section>
 
       <section id="status">
-        <h2>Status</h2>
-        <p class="section-intro">
+        <p class="eyebrow" data-reveal>08 &middot; Maturity check</p>
+        <h2 data-reveal>Status</h2>
+        <p class="section-intro" data-reveal>
           Not everything here is at the same level of maturity, so here's
           where each piece actually stands.
         </p>
         <div class="status-grid">
-          <div class="status-card">
+          <div class="status-card" data-reveal>
             <span class="badge"><span class="dot dot-good"></span>Verified</span>
             <h4>Core CLI</h4>
             <p>Streaming chat loop, history, and clean interrupt handling are working end to end.</p>
           </div>
-          <div class="status-card">
+          <div class="status-card" data-reveal style="--reveal-delay: 80ms;">
             <span class="badge"><span class="dot dot-warn"></span>Partially verified</span>
             <h4>MCP tool-calling</h4>
             <p>Config loading, connecting, schema merging, and the confirmation gate are all verified directly. A live model actually driving a full multi-round tool call against the merged schema is the next thing to confirm.</p>
           </div>
-          <div class="status-card">
+          <div class="status-card" data-reveal style="--reveal-delay: 160ms;">
             <span class="badge"><span class="dot dot-good"></span>Verified</span>
             <h4>GUI picker</h4>
             <p>Launch requests confirmed to correctly start the right model server as a detached background process, including the already-running case.</p>
           </div>
         </div>
       </section>
-    </main>
 
-    <footer>
-      <p>Local LLM &mdash; a personal, self-hosted inference project.</p>
-      <p>coleman-sagil.dev</p>
-    </footer>
-  </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p>Local LLM &mdash; a personal, self-hosted inference project.</p>
+        <p>coleman-sagil.dev</p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/">Home</a>
+        <a href="https://local-llm.coleman-sagil.dev/">Local LLM</a>
+        <a href="https://intuimotion.coleman-sagil.dev/">IntuiMotion</a>
+        <a href="https://oanda.coleman-sagil.dev/">OANDA</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal project write-ups</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
 </body>
 </html>

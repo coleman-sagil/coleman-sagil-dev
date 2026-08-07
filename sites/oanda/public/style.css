@@ -1,255 +1,339 @@
-/* OANDA Bot Suite — case study page
-   Palette: dataviz skill reference palette (chart chrome & sequential blue). */
+/* OANDA Bot Suite — case study page.
+   Loads shared design-system.css first; this file layers page-specific
+   look on top of those tokens, plus one deliberate identity override:
+   a trading blue accent (in place of the suite-default indigo), carried
+   over from this page's original palette and re-expressed in the
+   design system's three-layer theme pattern so it still resolves
+   correctly once/if a theme toggle sets [data-theme]. */
 
 :root {
-  color-scheme: light dark;
+  --accent: #3987e5;
+  --accent-strong: #86b6ef;
+  --accent-soft: rgba(57, 135, 229, 0.18);
 
-  --page:      #f9f9f7;
-  --surface:   #fcfcfb;
-  --ink:       #0b0b0b;
-  --ink-2:     #52514e;
-  --muted:     #898781;
-  --hairline:  #e1e0d9;
-  --baseline:  #c3c2b7;
-  --border:    rgba(11, 11, 11, 0.10);
-  --accent:    #2a78d6;
-  --accent-2:  #1c5cab;
-
-  --gate-1:    #86b6ef;
-  --gate-2:    #3987e5;
-  --gate-3:    #1c5cab;
+  /* Fixed three-stage diagram scale for the entry-gate funnel. Kept
+     constant across themes on purpose (see .gate rules below) rather
+     than remapped per-theme, matching how this diagram already worked. */
+  --gate-1: #86b6ef;
+  --gate-2: #3987e5;
+  --gate-3: #1c5cab;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    --page:      #0d0d0d;
-    --surface:   #1a1a19;
-    --ink:       #ffffff;
-    --ink-2:     #c3c2b7;
-    --muted:     #898781;
-    --hairline:  #2c2c2a;
-    --baseline:  #383835;
-    --border:    rgba(255, 255, 255, 0.10);
-    --accent:    #3987e5;
-    --accent-2:  #86b6ef;
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) {
+    --accent: #2a78d6;
+    --accent-strong: #1c5cab;
+    --accent-soft: rgba(42, 120, 214, 0.10);
   }
 }
 
 :root[data-theme="dark"] {
-  --page:      #0d0d0d;
-  --surface:   #1a1a19;
-  --ink:       #ffffff;
-  --ink-2:     #c3c2b7;
-  --muted:     #898781;
-  --hairline:  #2c2c2a;
-  --baseline:  #383835;
-  --border:    rgba(255, 255, 255, 0.10);
-  --accent:    #3987e5;
-  --accent-2:  #86b6ef;
+  --accent: #3987e5;
+  --accent-strong: #86b6ef;
+  --accent-soft: rgba(57, 135, 229, 0.18);
 }
 
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  background: var(--page);
-  color: var(--ink);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  line-height: 1.65;
+:root[data-theme="light"] {
+  --accent: #2a78d6;
+  --accent-strong: #1c5cab;
+  --accent-soft: rgba(42, 120, 214, 0.10);
 }
 
-.wrap {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-/* header */
-
-.site-header {
-  border-bottom: 1px solid var(--border);
-}
-
-.site-header .wrap {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 1.1rem;
-  padding-bottom: 1.1rem;
-  font-size: 0.9rem;
-}
-
-.site-header a {
-  color: var(--ink-2);
-  text-decoration: none;
-}
-
-.site-header a:hover { color: var(--accent); }
-
-.site-header .kicker {
-  color: var(--muted);
-}
-
-/* hero */
+/* ---------- hero ---------- */
 
 .hero {
-  padding: 3.5rem 0 2rem;
+  position: relative;
+  isolation: isolate;
+  padding: var(--space-section) 0 var(--space-16);
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -18rem;
+  left: 50%;
+  width: 56rem;
+  height: 34rem;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, var(--accent-soft), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-faint);
+  margin: 0 0 var(--space-4);
 }
 
 .hero h1 {
-  margin: 0 0 0.35rem;
-  font-size: 2.1rem;
-  letter-spacing: -0.01em;
+  font-size: var(--text-5xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tightest);
+  font-weight: 600;
+  margin: 0 0 var(--space-6);
 }
 
-.tag {
-  display: inline-block;
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin-bottom: 1.5rem;
-}
-
-.lede {
-  font-size: 1.05rem;
-  color: var(--ink-2);
+.hero__lede {
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  color: var(--text-dim);
   max-width: 42rem;
+  margin: 0 0 var(--space-8);
 }
 
-.scope-note {
-  margin-top: 1.5rem;
-  padding: 0.9rem 1.1rem;
+/* quick facts — structural counts only (bot count, gate count), never
+   performance-shaped numbers; this page's whole point is that no trading
+   results appear anywhere on it. */
+.hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0 0 var(--space-8);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.stat__value {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+}
+
+.stat__label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-faint);
+}
+
+.callout {
+  padding: var(--space-5) var(--space-6);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: 0.4rem;
-  font-size: 0.92rem;
-  color: var(--ink-2);
-  background: var(--surface);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  max-width: 42rem;
+  box-shadow: var(--shadow-sm);
 }
 
-/* sections */
+/* ---------- sections ---------- */
 
 section {
-  padding: 2.75rem 0;
+  padding: var(--space-section) 0;
   border-top: 1px solid var(--border);
 }
 
 section h2 {
-  font-size: 1.35rem;
-  margin: 0 0 0.85rem;
-  letter-spacing: -0.01em;
+  font-size: var(--text-3xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tighter);
+  font-weight: 600;
+  margin: 0 0 var(--space-5);
+  max-width: 32ch;
 }
 
 section h3 {
-  font-size: 1.05rem;
-  margin: 1.75rem 0 0.6rem;
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 600;
+  margin: var(--space-10) 0 var(--space-3);
 }
 
 section p {
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-4);
 }
 
 .section-intro {
-  color: var(--ink-2);
+  font-size: var(--text-md);
+  color: var(--text-dim);
+  max-width: 42rem;
 }
 
-/* currency grid */
+/* ---------- currency grid ---------- */
 
 .currency-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  gap: 0.65rem;
-  margin: 1.25rem 0;
+  gap: var(--space-3);
+  margin: var(--space-6) 0 var(--space-8);
 }
 
 .currency-badge {
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.65rem 0.8rem;
-  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-4);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-base) var(--ease-standard),
+              border-color var(--duration-base) var(--ease-standard);
 }
+
+/* [data-reveal]'s shared transition shorthand is higher specificity
+   (.js [data-reveal], 0,2,0) than the plain .currency-badge/.cap/.gate
+   rules above (0,1,0) and would otherwise win, making these hover
+   transitions run at the slow --duration-reveal reveal easing instead
+   of the fast hover timing declared here. Re-declare at (0,3,0) so the
+   hover-specific durations actually apply once an element has settled. */
+.js .currency-badge[data-reveal] {
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-base) var(--ease-standard),
+              border-color var(--duration-base) var(--ease-standard);
+}
+
+.currency-badge:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .currency-badge:hover { transform: none; }
+}
+
+.currency-grid .currency-badge:nth-child(1) { --reveal-delay: 0ms; }
+.currency-grid .currency-badge:nth-child(2) { --reveal-delay: 40ms; }
+.currency-grid .currency-badge:nth-child(3) { --reveal-delay: 80ms; }
+.currency-grid .currency-badge:nth-child(4) { --reveal-delay: 120ms; }
+.currency-grid .currency-badge:nth-child(5) { --reveal-delay: 160ms; }
+.currency-grid .currency-badge:nth-child(6) { --reveal-delay: 200ms; }
+.currency-grid .currency-badge:nth-child(7) { --reveal-delay: 240ms; }
 
 .currency-badge .code {
   display: block;
   font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.02em;
+  font-size: var(--text-base);
+  color: var(--accent-strong);
+  letter-spacing: var(--tracking-tight);
 }
 
 .currency-badge .name {
   display: block;
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin-top: 0.1rem;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  margin-top: 0.2rem;
 }
 
-/* funnel */
+/* ---------- entry-gate funnel ---------- */
 
 .funnel {
-  margin: 1.5rem 0 2rem;
+  margin: var(--space-6) 0 var(--space-8);
 }
 
 .gate {
+  position: relative;
   margin: 0 auto;
-  padding: 0.7rem 1rem;
-  border-radius: 0.6rem;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
   text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-base) var(--ease-standard);
 }
 
-.gate + .gate { margin-top: 0.4rem; }
+.gate:hover { transform: scale(1.015); }
+
+/* Same specificity fix as .currency-badge above: without this, the
+   .js [data-reveal] shorthand (0,2,0) beats the plain .gate rule
+   (0,1,0) and the hover scale inherits the slow reveal timing. */
+.js .gate[data-reveal] {
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-base) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate:hover { transform: none; }
+}
+
+.gate + .gate { margin-top: var(--space-6); }
+
+.gate:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(-1 * var(--space-6));
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid var(--text-faint);
+  opacity: 0.6;
+}
 
 .gate-label {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking-wide);
   opacity: 0.85;
 }
 
 .gate-name {
-  margin: 0.15rem 0 0;
+  margin: 0.2rem 0 0;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
-.gate-1 { width: 100%;  max-width: 34rem; background: var(--gate-1); color: #0b0b0b; }
-.gate-2 { width: 74%;   max-width: 25.2rem; background: var(--gate-2); color: #ffffff; }
-.gate-3 { width: 48%;   max-width: 16.4rem; background: var(--gate-3); color: #ffffff; }
+.gate-1 { width: 100%; max-width: 36rem; background: var(--gate-1); color: #0b0b0b; }
+.gate-2 { width: 76%;  max-width: 26rem; background: var(--gate-2); color: #ffffff; }
+.gate-3 { width: 50%;  max-width: 17rem; background: var(--gate-3); color: #ffffff; }
+
+.gate-details {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0 0 var(--space-4);
+}
 
 .gate-detail {
-  border-left: 2px solid var(--hairline);
-  padding-left: 1rem;
-  margin: 0 0 1.1rem;
+  border-left: 2px solid var(--border-strong);
+  padding-left: var(--space-4);
 }
 
 .gate-detail .k {
   display: block;
-  font-size: 0.78rem;
-  color: var(--muted);
-  margin-bottom: 0.15rem;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  margin-bottom: 0.2rem;
 }
 
-/* chart */
+.gate-detail p { margin: 0; }
+
+/* ---------- chart ---------- */
 
 .chart-block {
-  margin: 1.25rem 0 1.75rem;
+  margin: var(--space-6) 0 var(--space-8);
 }
 
 .chart-caption {
   font-weight: 600;
-  margin: 0 0 0.15rem;
+  font-size: var(--text-base);
+  margin: 0 0 0.2rem;
 }
 
 .chart-subcaption {
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin: 0 0 0.9rem;
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  margin: 0 0 var(--space-5);
 }
 
 .chart-frame {
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: var(--surface);
-  padding: 0.75rem 0.5rem 0.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4) var(--space-3) var(--space-3);
   overflow-x: auto;
 }
 
@@ -260,96 +344,153 @@ section p {
   min-width: 30rem;
 }
 
-.bar-fill { fill: var(--accent); }
-.tick-text { fill: var(--muted); font-size: 11px; }
-.value-text { fill: var(--ink-2); font-size: 12px; font-weight: 600; }
-.axis-line { stroke: var(--baseline); stroke-width: 1; }
-.grid-line { stroke: var(--hairline); stroke-width: 1; }
-.axis-title { fill: var(--muted); font-size: 11px; }
+.bar-fill {
+  fill: var(--accent);
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
 
-/* table */
+.bar-fill:hover { opacity: 0.8; }
+
+.tick-text { fill: var(--text-faint); font-size: 11px; }
+.value-text { fill: var(--text-dim); font-size: 12px; font-weight: 600; }
+.axis-line { stroke: var(--border-strong); stroke-width: 1; }
+.grid-line { stroke: var(--border); stroke-width: 1; }
+.axis-title { fill: var(--text-faint); font-size: 11px; }
+
+.table-caption {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  margin-top: var(--space-3);
+}
+
+/* ---------- account-wide caps ---------- */
+
+.cap-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  margin: var(--space-5) 0 var(--space-4);
+  padding: 0;
+}
+
+.cap-grid .cap:nth-child(1) { --reveal-delay: 0ms; }
+.cap-grid .cap:nth-child(2) { --reveal-delay: 70ms; }
+.cap-grid .cap:nth-child(3) { --reveal-delay: 140ms; }
+.cap-grid .cap:nth-child(4) { --reveal-delay: 210ms; }
+
+.cap {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-base) var(--ease-standard),
+              border-color var(--duration-base) var(--ease-standard);
+}
+
+.cap:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.js .cap[data-reveal] {
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-base) var(--ease-standard),
+              border-color var(--duration-base) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cap:hover { transform: none; }
+}
+
+.cap h4 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cap p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+}
+
+@media (max-width: 34rem) {
+  .cap-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- config table ---------- */
 
 .table-wrap {
   overflow-x: auto;
-  margin: 1rem 0 0.5rem;
+  margin: var(--space-5) 0 var(--space-3);
   border: 1px solid var(--border);
-  border-radius: 0.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
 }
 
 table {
   border-collapse: collapse;
   width: 100%;
   min-width: 34rem;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 
 th, td {
   text-align: left;
-  padding: 0.55rem 0.8rem;
-  border-bottom: 1px solid var(--hairline);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
 thead th {
-  color: var(--muted);
+  color: var(--text-faint);
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--surface);
+  letter-spacing: var(--tracking-wide);
+}
+
+tbody tr {
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+tbody tr:hover {
+  background: var(--bg-raised);
 }
 
 tbody tr:last-child td { border-bottom: none; }
 
 td.param {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
-  color: var(--accent);
+  color: var(--accent-strong);
   white-space: nowrap;
 }
 
 td.default {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  color: var(--ink-2);
+  color: var(--text-dim);
 }
 
-.table-caption {
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin-top: 0.6rem;
-}
-
-/* footer */
-
-footer {
-  border-top: 1px solid var(--border);
-  padding: 2.25rem 0 3rem;
-}
+/* ---------- footer disclaimer ---------- */
+/* .disclaimer keeps its own class inside .site-footer__notice, per the
+   shared footer contract — only color/size come from the shell. */
 
 .disclaimer {
-  font-size: 0.9rem;
-  color: var(--ink-2);
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: var(--surface);
-  margin-bottom: 1.5rem;
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  margin: 0;
 }
-
-.footer-nav {
-  font-size: 0.85rem;
-}
-
-.footer-nav a {
-  color: var(--ink-2);
-  text-decoration: none;
-}
-
-.footer-nav a:hover { color: var(--accent); }
 
 @media (max-width: 30rem) {
-  .hero h1 { font-size: 1.7rem; }
-  .gate-2 { width: 82%; }
-  .gate-3 { width: 60%; }
+  .hero h1 { font-size: var(--text-4xl); }
+  .gate-2 { width: 84%; }
+  .gate-3 { width: 62%; }
+  .hero__stats { gap: var(--space-6); }
 }
