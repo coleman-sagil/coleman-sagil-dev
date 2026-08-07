@@ -1,0 +1,414 @@
+/* Local LLM — project write-up. Dependency-free, no build step. */
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #0b0d10;
+  --bg-raised: #12151a;
+  --bg-card: #151920;
+  --border: #242932;
+  --text: #e6e9ee;
+  --text-dim: #99a1ad;
+  --text-faint: #656d79;
+  --accent: #7c9cf0;
+  --accent-soft: #7c9cf033;
+  --accent-strong: #aebbf5;
+  --warn: #e0a458;
+  --warn-soft: #e0a45826;
+  --good: #6fc79a;
+  --good-soft: #6fc79a26;
+  --code-bg: #0f1217;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8f8f6;
+    --bg-raised: #ffffff;
+    --bg-card: #ffffff;
+    --border: #e2e1da;
+    --text: #1b1d20;
+    --text-dim: #52565d;
+    --text-faint: #82868f;
+    --accent: #3d5fd1;
+    --accent-soft: #3d5fd11a;
+    --accent-strong: #24408f;
+    --warn: #9a6a20;
+    --warn-soft: #9a6a2014;
+    --good: #1f7a53;
+    --good-soft: #1f7a5314;
+    --code-bg: #eef0ee;
+    --shadow: none;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+code, .mono {
+  font-family: "SF Mono", "Cascadia Code", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.88em;
+}
+
+code {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+}
+
+a {
+  color: var(--accent-strong);
+  text-decoration-color: var(--accent-soft);
+  text-underline-offset: 0.15em;
+}
+a:hover { text-decoration-color: currentColor; }
+
+.wrap {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ---------- hero ---------- */
+
+header.hero {
+  padding: 4.5rem 0 3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin: 0 0 0.75rem;
+}
+
+h1 {
+  font-size: 2.4rem;
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  font-size: 1.15rem;
+  color: var(--text-dim);
+  max-width: 38rem;
+  margin: 0 0 1.75rem;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.8rem;
+  padding: 0.32em 0.75em;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.badge .dot {
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dot-good { background: var(--good); }
+.dot-warn { background: var(--warn); }
+.dot-faint { background: var(--text-faint); }
+
+.scope-note {
+  margin-top: 1.75rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-soft);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  background: var(--bg-raised);
+}
+.scope-note strong { color: var(--text); }
+
+/* ---------- sections ---------- */
+
+main { padding: 0 0 4rem; }
+
+section {
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+section:last-of-type { border-bottom: none; }
+
+h2 {
+  font-size: 1.4rem;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.005em;
+}
+
+.section-intro {
+  color: var(--text-dim);
+  margin: 0 0 1.75rem;
+  max-width: 40rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin: 1.75rem 0 0.5rem;
+}
+h3:first-child { margin-top: 0; }
+
+p { margin: 0 0 1rem; }
+p:last-child { margin-bottom: 0; }
+
+ul.plain, ol.plain {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+ul.plain li, ol.plain li { margin-bottom: 0.5rem; }
+ul.plain li:last-child, ol.plain li:last-child { margin-bottom: 0; }
+
+.note {
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-soft);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  margin: 1.25rem 0 0;
+}
+.note:first-child { margin-top: 0; }
+.note p:last-child { margin-bottom: 0; }
+.note strong { color: var(--text); }
+
+.note.warn { border-left-color: var(--warn-soft); }
+
+/* ---------- models table ---------- */
+
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 38rem;
+  font-size: 0.9rem;
+}
+
+thead th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text-dim);
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+td.model-name { color: var(--text); white-space: nowrap; }
+
+.table-caption {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  margin-top: 0.65rem;
+}
+
+/* ---------- architecture pipeline ---------- */
+
+.pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: step;
+  position: relative;
+}
+
+.pipeline li {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 1.6rem 2.75rem;
+}
+.pipeline li:last-child { padding-bottom: 0; }
+
+.pipeline li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.pipeline li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  top: 1.9rem;
+  bottom: -0.05rem;
+  width: 1px;
+  background: var(--border);
+}
+
+.pipeline .step-name {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.pipeline .step-desc {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-top: 0.15rem;
+}
+
+/* ---------- split cards (GPU vs CPU) ---------- */
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 42rem) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.4rem 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.card .tag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.card .tag-row .badge { font-size: 0.72rem; padding: 0.2em 0.6em; }
+
+.card p:last-child { margin-bottom: 0; }
+.card ul.plain:last-child { margin-bottom: 0; }
+
+/* ---------- status grid ---------- */
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+}
+
+@media (max-width: 42rem) {
+  .status-grid { grid-template-columns: 1fr; }
+}
+
+.status-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+}
+
+.status-card .badge { margin-bottom: 0.6rem; }
+
+.status-card h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.status-card p {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+/* ---------- engineering-notes list ---------- */
+
+.notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.notes-list li {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+}
+
+.notes-list .note-title {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.98rem;
+  margin: 0 0 0.4rem;
+}
+
+.notes-list p {
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+.notes-list p:last-child { margin-bottom: 0; }
+
+/* ---------- footer ---------- */
+
+footer {
+  padding: 2.5rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+footer p { margin: 0 0 0.4rem; }

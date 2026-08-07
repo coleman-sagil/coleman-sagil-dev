@@ -4,30 +4,381 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Local LLM &mdash; coleman-sagil.dev</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      max-width: 40rem;
-      margin: 4rem auto;
-      padding: 0 1.5rem;
-      line-height: 1.6;
-    }
-    h1 { margin-bottom: 0.25rem; }
-    .tag {
-      display: inline-block;
-      font-size: 0.85rem;
-      opacity: 0.7;
-      margin-bottom: 2rem;
-    }
-  </style>
+  <meta name="description" content="Running large mixture-of-experts language models locally, entirely offline, on a single consumer 8GB GPU &mdash; a llama.cpp-based inference stack with a streaming CLI and browser GUI.">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Local LLM</h1>
-  <p class="tag">project page &mdash; coming soon</p>
-  <p>
-    A project exploring running large language models locally, entirely
-    offline, with no cloud dependency. Details and write-up coming soon.
-  </p>
+  <div class="wrap">
+    <header class="hero">
+      <p class="eyebrow">Self-hosted inference</p>
+      <h1>Local LLM</h1>
+      <p class="lede">
+        A personal project running large mixture-of-experts language models
+        entirely offline, on a desktop with a single consumer-grade 8GB GPU.
+        No cloud API, no subscription, no data leaving the machine &mdash;
+        just a model file, an inference server, and two clients that talk to it.
+      </p>
+      <div class="badges">
+        <span class="badge">llama.cpp</span>
+        <span class="badge">CUDA</span>
+        <span class="badge">Python</span>
+        <span class="badge">GGUF</span>
+        <span class="badge">Model Context Protocol</span>
+        <span class="badge">Offline-first</span>
+      </div>
+      <div class="scope-note">
+        <strong>This page is a write-up, not a demo.</strong> Every model
+        server described here runs on personal hardware and is not exposed
+        to the internet &mdash; there is no live endpoint on this page to
+        connect to.
+      </div>
+    </header>
+
+    <main>
+      <section id="overview">
+        <h2>What this is</h2>
+        <p class="section-intro">
+          The whole project rests on one idea: a model file on disk becomes
+          a live HTTP server, and everything else &mdash; every tool, every
+          interface &mdash; is just a client of that server.
+        </p>
+        <p>
+          Three GGUF model files sit on disk: <strong>Llama&nbsp;4&nbsp;Scout</strong>,
+          <strong>Qwen3&#8209;Coder&#8209;Next</strong>, and <strong>Qwen3&#8209;Next&#8209;80B&#8209;A3B&#8209;Instruct</strong>.
+          A GGUF file is inert: weights plus metadata, nothing more, until
+          something loads it. That something is <code>llama-server</code>,
+          the inference engine from the <a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener">llama.cpp</a>
+          project, built from source with CUDA support rather than run
+          through a wrapper like Ollama, for direct control over
+          quantization, GPU/CPU offload, and context settings. Each running
+          model gets its own <code>llama-server</code> process, and each one
+          exposes an OpenAI-compatible HTTP API &mdash; the same
+          <code>POST /v1/chat/completions</code> shape used by the OpenAI
+          API and by most of the LLM tooling ecosystem. That compatibility
+          is what lets a plain HTTP client speak to a local model exactly
+          the way it would speak to a cloud one.
+        </p>
+        <p>
+          Two independent front ends sit on top of that API: a terminal
+          chat client and a lightweight browser-based GUI. Neither one
+          knows the other exists, and they don't share code &mdash; they
+          share a contract. A model name always maps to one running server,
+          and talking to it is always the same request shape. Any future
+          front end (a different TUI, a small mobile client) would just be
+          another client of that same contract; nothing about the inference
+          layer would need to change.
+        </p>
+      </section>
+
+      <section id="the-trick">
+        <h2>The trick: fitting an 80B-parameter model into 8GB of VRAM</h2>
+        <p class="section-intro">
+          None of these models come close to fitting in 8GB of VRAM as a
+          whole &mdash; their GGUF files run 43&ndash;65GB apiece. What
+          makes them usable on a small GPU at all is that they're
+          <strong>mixture-of-experts (MoE)</strong> architectures, combined
+          with a specific offload recipe.
+        </p>
+        <p>
+          A dense model uses every one of its weights on every token it
+          processes. An MoE model instead has a large bank of "expert"
+          feed-forward sub-networks and a small routing mechanism that
+          activates only a handful of them per token. Most of the model's
+          bulk sits idle for any given token; only the attention layers and
+          a small always-active shared/routing portion run on literally
+          everything. Qwen3-Coder-Next and Qwen3-Next-80B-A3B-Instruct
+          share the same underlying backbone &mdash; Alibaba's Qwen3-Next,
+          roughly 80B total parameters with only about 3B active per token,
+          one variant fine-tuned for code and the other instruct-tuned
+          generally.
+        </p>
+        <p>
+          <code>llama-server</code> exposes two flags that exploit this
+          directly: <code>-ngl 999</code> tells it to offload every
+          transformer layer it can to the GPU, and <code>--cpu-moe</code>
+          overrides that for one specific category of tensor, pinning the
+          MoE expert feed-forward weights to CPU RAM regardless. The
+          combined effect is a deliberate split:
+        </p>
+        <div class="card-grid">
+          <div class="card">
+            <div class="tag-row">
+              <span class="badge"><span class="dot dot-good"></span>GPU &middot; VRAM</span>
+            </div>
+            <p>
+              Attention layers and shared/routing weights &mdash; the parts
+              that run on <em>every</em> token &mdash; live in the scarce,
+              fast memory where they benefit most from GPU throughput.
+            </p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="badge"><span class="dot dot-warn"></span>CPU &middot; system RAM</span>
+            </div>
+            <p>
+              The MoE expert weights &mdash; the bulk of the parameter
+              count, but sparsely used by any single token &mdash; sit in
+              cheap, plentiful RAM instead of competing for VRAM.
+            </p>
+          </div>
+        </div>
+        <p style="margin-top: 1.5rem;">
+          That's the whole trick that lets an 8GB consumer card meaningfully
+          accelerate models many times larger than its own memory. Context
+          length trades off against the same VRAM budget, so it's tuned
+          per model: Scout's attention layers are larger (17B active
+          parameters per token, across 16 experts), so its context window
+          is trimmed further in GPU-offload mode to leave headroom, while
+          both Qwen variants keep a larger window since their much smaller
+          active-parameter footprint leaves more room to begin with.
+        </p>
+        <div class="note">
+          <p>
+            There's also a plain CPU-only mode (<code>-ngl 0</code>,
+            nothing offloaded) that never touches the GPU at all. It's
+            slow &mdash; on the order of one token every few seconds for
+            Scout and Qwen3-Next, and sometimes under one token per second
+            for Qwen3-Coder-Next specifically, since its expert routing is
+            expensive to do from CPU RAM &mdash; but it's the mode both
+            front ends use by default, and a fully isolated way to
+            sanity-check that a model and its chat template are working
+            correctly before ever touching GPU offload.
+          </p>
+        </div>
+      </section>
+
+      <section id="models">
+        <h2>The models</h2>
+        <p class="section-intro">
+          All three are quantized GGUF builds, chosen to cover a general
+          assistant, a coding specialist, and a general-purpose sibling
+          built on the coding model's own architecture.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Role</th>
+                <th>MoE shape</th>
+                <th>Size on disk</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="model-name">Llama 4 Scout</td>
+                <td>General-purpose</td>
+                <td>16 experts &middot; 17B active/token</td>
+                <td>~65GB (2 GGUF parts)</td>
+              </tr>
+              <tr>
+                <td class="model-name">Qwen3-Coder-Next</td>
+                <td>Coding specialist</td>
+                <td>Qwen3-Next backbone &middot; 80B total / ~3B active</td>
+                <td>~49GB</td>
+              </tr>
+              <tr>
+                <td class="model-name">Qwen3-Next-80B-A3B-Instruct</td>
+                <td>General-purpose</td>
+                <td>Same backbone as above, instruct-tuned</td>
+                <td>~43GB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-caption">
+          Qwen3-Coder-Next and Qwen3-Next-80B-A3B-Instruct are the same
+          underlying model architecture, fine-tuned for different jobs
+          &mdash; which is why they land in the same offload recipe and
+          the same rough speed range on this hardware.
+        </p>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture, top to bottom</h2>
+        <ol class="pipeline">
+          <li>
+            <div class="step-name">Model file (GGUF)</div>
+            <div class="step-desc">Weights plus metadata on disk. Inert until loaded &mdash; does nothing by itself.</div>
+          </li>
+          <li>
+            <div class="step-name">llama-server</div>
+            <div class="step-desc">Loads one GGUF file, applies the GPU/CPU offload split above, and exposes it as an OpenAI-compatible HTTP API. One process per running model.</div>
+          </li>
+          <li>
+            <div class="step-name">Shared API contract</div>
+            <div class="step-desc"><code>POST /v1/chat/completions</code>, with the model's own embedded chat template applied automatically. Every client speaks this one shape.</div>
+          </li>
+          <li>
+            <div class="step-name">Front ends</div>
+            <div class="step-desc">A terminal CLI and a browser-based GUI, both independent, interchangeable clients of the same contract.</div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cli">
+        <h2>The CLI: a streaming REPL with real tool-calling</h2>
+        <p class="section-intro">
+          The base client is a straightforward terminal chat loop: a
+          <code>you&gt;</code> prompt, the reply streaming back token by
+          token over server-sent events, and conversation history kept in
+          memory across turns. <code>/clear</code> wipes history without
+          restarting the server, <code>/exit</code> (or Ctrl+D) ends the
+          session cleanly, and Ctrl+C interrupts mid-stream without
+          leaving anything in a broken state.
+        </p>
+        <h3>An opt-in MCP tool-calling layer</h3>
+        <p>
+          A separate <code>--tools</code> mode layers a real
+          <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol</a>
+          client on top of that same chat loop, kept deliberately
+          non-streaming and clearly marked as best-effort. On startup it
+          connects, over stdio, to whichever MCP servers are enabled in a
+          small config file, calls <code>list_tools()</code> on each, and
+          merges the results into one tool schema the model can call
+          against. Every tool is namespaced <code>{source}__{name}</code>
+          &mdash; e.g. <code>filesystem__read_file</code> &mdash; which
+          isn't cosmetic: a couple of the configured servers expose tools
+          with names that would otherwise collide.
+        </p>
+        <p>
+          The safety gate is the same for every source, no exceptions:
+          every tool call, before it executes, requires a manual y/n
+          confirmation. There's no auto-execute path. A local filesystem
+          server can read and write anything under its configured root, so
+          that confirmation is the real safety boundary, not a formality.
+          Servers that fail to connect don't take the CLI down with them
+          &mdash; it prints one warning line and continues with whatever
+          did connect.
+        </p>
+        <div class="note warn">
+          <p>
+            <strong>An honest limitation, found rather than assumed:</strong>
+            a merged tool schema can be bigger than these models' context
+            windows. One configured browser-automation server alone
+            measured out to roughly 4,400 tokens of schema; combined with a
+            filesystem server's tool set, the merged schema came in at
+            about 6,600 tokens against a live model running a 4,096-token
+            context &mdash; over budget before a single word of
+            conversation. The fix wasn't just a warning: that server now
+            ships <em>disabled by default</em> until the context window is
+            raised to accommodate it, and the CLI checks the connected
+            server's actual context size at startup and warns proactively
+            if the merged schema looks too large for it, instead of
+            failing mid-conversation with a confusing error.
+          </p>
+        </div>
+      </section>
+
+      <section id="gui">
+        <h2>The GUI: a picker, not a rebuilt chat UI</h2>
+        <p class="section-intro">
+          Rather than build a custom chat interface, the GUI leans on the
+          one llama.cpp already ships with each model server.
+        </p>
+        <p>
+          A tiny local picker page lists one entry per model. Selecting one
+          launches that model's server, in CPU-only mode, if it isn't
+          already running, then opens that model's own built-in llama.cpp
+          chat page in an app-mode browser window &mdash; no tabs, no
+          address bar, so it reads as a standalone app rather than a
+          browser tab. If the picker's own backend isn't reachable for any
+          reason, the page falls back to showing the exact command to run
+          the same launch by hand, as a deliberate safety net rather than a
+          missing feature. Once a model's chat window is open, it's just a
+          plain web page talking to the same
+          <code>/v1/chat/completions</code> contract as the CLI. This GUI
+          path only ever launches CPU-only, by design; GPU-offload mode is
+          something invoked directly, on purpose, not exposed through a
+          click.
+        </p>
+      </section>
+
+      <section id="notes">
+        <h2>Three bugs worth remembering</h2>
+        <p class="section-intro">
+          A few things that came up building this, kept here because
+          they're the kind of thing worth remembering the next time
+          something looks similarly broken.
+        </p>
+        <ul class="notes-list">
+          <li>
+            <p class="note-title">Wrong endpoint, garbled output</p>
+            <p>
+              <code>llama-server</code> exposes both a raw completion
+              endpoint that takes a bare prompt string and an
+              OpenAI-compatible chat endpoint that formats structured
+              messages through the model's embedded template automatically.
+              Hit the raw endpoint directly with a hand-written prompt and
+              you skip that templating entirely &mdash; literal template
+              control tokens and role markers leak into the visible
+              output. Not a model defect, just a mismatch between the
+              endpoint called and the input shape it expects. The fix is
+              the rule now: always go through the chat-completions
+              endpoint with a proper messages array.
+            </p>
+          </li>
+          <li>
+            <p class="note-title">Streamed emoji and accents turning to mojibake</p>
+            <p>
+              The model server's streaming response declares
+              <code>text/event-stream</code> with no character-set
+              parameter, so a naive HTTP client's default encoding guess
+              can land on the wrong single-byte codec and mangle every
+              multi-byte UTF-8 sequence &mdash; corrupting not just what's
+              printed to the terminal but the in-memory conversation
+              history itself. The fix was one line: explicitly force
+              UTF-8 decoding on the response before iterating over it.
+              Confirmed with a round-trip test asking a model to echo back
+              a string full of accents and emoji and checking the bytes
+              that came back.
+            </p>
+          </li>
+          <li>
+            <p class="note-title">A tool schema bigger than the context window</p>
+            <p>
+              Covered above in the CLI section, but worth restating as its
+              own lesson: it's entirely possible for the description of
+              the tools available to a model to exceed the model's own
+              context window, with zero conversation in it yet. That's not
+              an edge case to handle defensively "just in case" &mdash; it
+              actually happened, on the first real attempt to combine two
+              tool sources against a small-context model.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section id="status">
+        <h2>Status</h2>
+        <p class="section-intro">
+          Not everything here is at the same level of maturity, so here's
+          where each piece actually stands.
+        </p>
+        <div class="status-grid">
+          <div class="status-card">
+            <span class="badge"><span class="dot dot-good"></span>Verified</span>
+            <h4>Core CLI</h4>
+            <p>Streaming chat loop, history, and clean interrupt handling are working end to end.</p>
+          </div>
+          <div class="status-card">
+            <span class="badge"><span class="dot dot-warn"></span>Partially verified</span>
+            <h4>MCP tool-calling</h4>
+            <p>Config loading, connecting, schema merging, and the confirmation gate are all verified directly. A live model actually driving a full multi-round tool call against the merged schema is the next thing to confirm.</p>
+          </div>
+          <div class="status-card">
+            <span class="badge"><span class="dot dot-good"></span>Verified</span>
+            <h4>GUI picker</h4>
+            <p>Launch requests confirmed to correctly start the right model server as a detached background process, including the already-running case.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Local LLM &mdash; a personal, self-hosted inference project.</p>
+      <p>coleman-sagil.dev</p>
+    </footer>
+  </div>
 </body>
 </html>

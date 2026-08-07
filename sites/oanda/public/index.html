@@ -3,32 +3,268 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OANDA Trading Bot &mdash; coleman-sagil.dev</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      max-width: 40rem;
-      margin: 4rem auto;
-      padding: 0 1.5rem;
-      line-height: 1.6;
-    }
-    h1 { margin-bottom: 0.25rem; }
-    .tag {
-      display: inline-block;
-      font-size: 0.85rem;
-      opacity: 0.7;
-      margin-bottom: 2rem;
-    }
-  </style>
+  <title>OANDA Bot Suite &mdash; coleman-sagil.dev</title>
+  <meta name="description" content="A case study on a 7-bot currency-specialist trading suite: multi-timeframe entry logic, per-bot position sizing, and account-wide risk caps.">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>OANDA Trading Bot</h1>
-  <p class="tag">project page &mdash; coming soon</p>
-  <p>
-    A project exploring automated, algorithmic currency trading strategies.
-    This page is a showcase write-up only; it does not provide access to
-    any live trading system. Details coming soon.
-  </p>
+
+  <header class="site-header">
+    <div class="wrap">
+      <span class="kicker">coleman-sagil.dev</span>
+      <span>project case study</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+
+      <div class="hero">
+        <h1>OANDA Bot Suite</h1>
+        <p class="tag">algorithmic trading &mdash; system design case study</p>
+        <p class="lede">
+          Seven currency-specialist trading bots share a single brokerage
+          account, a single strategy, and a single risk budget. Each bot
+          watches its own slice of the market; a coordination layer keeps
+          their combined risk from ever exceeding what one bot alone would
+          take.
+        </p>
+        <p class="scope-note">
+          This page is a write-up of the system's design &mdash; strategy
+          logic, multi-bot coordination, and risk management. It is not a
+          dashboard. Nothing here starts, stops, or connects to the running
+          system, and no account data, balances, or trade history are
+          shown.
+        </p>
+      </div>
+
+      <section id="overview">
+        <h2>Seven specialists, one account</h2>
+        <p class="section-intro">
+          Rather than one bot trading all 28 currency pairs OANDA offers,
+          the suite splits the work by currency. Each specialist watches
+          only the pairs built around its assigned currency, running the
+          exact same strategy logic as its six siblings.
+        </p>
+        <div class="currency-grid">
+          <div class="currency-badge"><span class="code">JPY</span><span class="name">Japanese Yen</span></div>
+          <div class="currency-badge"><span class="code">EUR</span><span class="name">Euro</span></div>
+          <div class="currency-badge"><span class="code">GBP</span><span class="name">British Pound</span></div>
+          <div class="currency-badge"><span class="code">AUD</span><span class="name">Australian Dollar</span></div>
+          <div class="currency-badge"><span class="code">NZD</span><span class="name">New Zealand Dollar</span></div>
+          <div class="currency-badge"><span class="code">CAD</span><span class="name">Canadian Dollar</span></div>
+          <div class="currency-badge"><span class="code">CHF</span><span class="name">Swiss Franc</span></div>
+        </div>
+        <p>
+          Running seven independent processes against one account creates
+          a coordination problem a backtest never sees: two specialists
+          can decide to act on the account at the same instant. The suite
+          runs on Linux and macOS specifically to use POSIX file locking,
+          so specialists queue behind each other for the moment they touch
+          shared account state instead of racing one another.
+        </p>
+        <p>
+          A control dashboard, built with Streamlit and reachable only
+          from the machine running it, is where specialists get started,
+          stopped, and monitored. Because a specialist may be holding an
+          open position at any moment, the shared configuration below is
+          designed to hot-reload: a change takes effect on the process's
+          next scan cycle rather than requiring it to be killed and
+          relaunched. That dashboard is a private operating tool and isn't
+          part of this page.
+        </p>
+      </section>
+
+      <section id="strategy">
+        <h2>Entry logic: three narrowing gates</h2>
+        <p class="section-intro">
+          Every specialist runs the identical decision funnel; only the
+          currency and pairs change. A trade idea has to clear all three
+          timeframes, largest to smallest, before it's allowed anywhere
+          near an entry.
+        </p>
+
+        <div class="funnel">
+          <div class="gate gate-1">
+            <p class="gate-label">Gate 1 &mdash; Daily</p>
+            <p class="gate-name">TEMA200 trend direction</p>
+          </div>
+          <div class="gate gate-2">
+            <p class="gate-label">Gate 2 &mdash; 8h / 4h</p>
+            <p class="gate-name">Moving-average stack alignment</p>
+          </div>
+          <div class="gate gate-3">
+            <p class="gate-label">Gate 3 &mdash; 1h</p>
+            <p class="gate-name">S/R entry + RSI confirmation</p>
+          </div>
+        </div>
+
+        <div class="gate-detail">
+          <span class="k">Gate 1 &mdash; daily trend</span>
+          A 200-period triple exponential moving average sets the macro
+          direction: its slope and the price's position relative to it
+          have to agree before anything downstream is even evaluated.
+        </div>
+        <div class="gate-detail">
+          <span class="k">Gate 2 &mdash; 8-hour / 4-hour structure</span>
+          On both timeframes, price has to sit on the correct side of a
+          full stack of moving averages, in order: a 50-period DEMA, then
+          a 100-period DEMA, then the 200-period TEMA. A stack that's
+          aligned but out of order doesn't count.
+        </div>
+        <div class="gate-detail">
+          <span class="k">Gate 3 &mdash; hourly trigger</span>
+          Entry only fires at a support or resistance level on the
+          1-hour chart, confirmed by the 50-period RSI crossing its own
+          midline in the trade's direction. This is the timing gate; the
+          first two only decide whether the setup is allowed to exist.
+        </div>
+
+        <h3>Stops and targets</h3>
+        <p>
+          The stop is anchored to market structure rather than a flat pip
+          count chosen in advance: it sits a fixed 15 pips beyond the S/R
+          level that triggered the entry. No trade is taken unless its
+          target, the next S/R level out, offers at least a 2:1
+          reward-to-risk ratio.
+        </p>
+
+        <h3>Post-news mode</h3>
+        <p>
+          A separate mode watches for high-impact economic releases and,
+          after the initial spike, looks for a Fibonacci retracement
+          entry into the pullback rather than chasing the move itself.
+        </p>
+      </section>
+
+      <section id="risk">
+        <h2>Risk management: one account, seven processes</h2>
+        <p class="section-intro">
+          The strategy decides when to trade. A separate layer decides
+          how much, and it's built around the fact that seven independent
+          processes are all drawing on the same equity.
+        </p>
+
+        <h3>Position sizing splits, it doesn't stack</h3>
+        <p>
+          Each specialist risks a fixed percentage of equity per trade,
+          but that equity figure is divided evenly across however many
+          specialists are currently running. Starting a second bot halves
+          each bot's position size rather than doubling the account's
+          total exposure, and the relationship holds for any number
+          running at once:
+        </p>
+
+        <div class="chart-block">
+          <p class="chart-caption">Equity share per bot, by number of active specialists</p>
+          <p class="chart-subcaption">
+            Arithmetic from the sizing rule (100% &divide; active bots),
+            not a performance result &mdash; no trading data appears
+            anywhere on this page.
+          </p>
+          <div class="chart-frame">
+            <svg viewBox="0 0 640 300" role="img" aria-label="Bar chart. Equity share per bot falls as more specialists run at once: 100% with one bot, 50% with two, 33.3% with three, 25% with four, 20% with five, 16.7% with six, 14.3% with seven, following 100 percent divided by the number of active bots.">
+              <line class="grid-line" x1="46" y1="24" x2="630" y2="24"></line>
+              <line class="grid-line" x1="46" y1="79" x2="630" y2="79"></line>
+              <line class="grid-line" x1="46" y1="134" x2="630" y2="134"></line>
+              <line class="grid-line" x1="46" y1="189" x2="630" y2="189"></line>
+              <line class="axis-line" x1="46" y1="244" x2="630" y2="244"></line>
+
+              <text class="tick-text" x="40" y="28" text-anchor="end">100</text>
+              <text class="tick-text" x="40" y="83" text-anchor="end">75</text>
+              <text class="tick-text" x="40" y="138" text-anchor="end">50</text>
+              <text class="tick-text" x="40" y="193" text-anchor="end">25</text>
+              <text class="tick-text" x="40" y="248" text-anchor="end">0</text>
+
+              <rect class="bar-fill" x="65.71" y="24" width="44" height="220" rx="4" ry="4"><title>1 bot running — 100% of equity</title></rect>
+              <rect class="bar-fill" x="149.14" y="134" width="44" height="110" rx="4" ry="4"><title>2 bots running — 50% of equity each</title></rect>
+              <rect class="bar-fill" x="232.57" y="170.74" width="44" height="73.26" rx="4" ry="4"><title>3 bots running — 33.3% of equity each</title></rect>
+              <rect class="bar-fill" x="316.00" y="189.00" width="44" height="55.00" rx="4" ry="4"><title>4 bots running — 25% of equity each</title></rect>
+              <rect class="bar-fill" x="399.43" y="200.00" width="44" height="44.00" rx="4" ry="4"><title>5 bots running — 20% of equity each</title></rect>
+              <rect class="bar-fill" x="482.86" y="207.26" width="44" height="36.74" rx="4" ry="4"><title>6 bots running — 16.7% of equity each</title></rect>
+              <rect class="bar-fill" x="566.29" y="212.54" width="44" height="31.46" rx="4" ry="4"><title>7 bots running — 14.3% of equity each</title></rect>
+
+              <text class="value-text" x="87.71" y="16" text-anchor="middle">100%</text>
+              <text class="value-text" x="171.14" y="126" text-anchor="middle">50%</text>
+              <text class="value-text" x="254.57" y="162.74" text-anchor="middle">33.3%</text>
+              <text class="value-text" x="338.00" y="181.00" text-anchor="middle">25%</text>
+              <text class="value-text" x="421.43" y="192.00" text-anchor="middle">20%</text>
+              <text class="value-text" x="504.86" y="199.26" text-anchor="middle">16.7%</text>
+              <text class="value-text" x="588.29" y="204.54" text-anchor="middle">14.3%</text>
+
+              <text class="tick-text" x="87.71" y="260" text-anchor="middle">1</text>
+              <text class="tick-text" x="171.14" y="260" text-anchor="middle">2</text>
+              <text class="tick-text" x="254.57" y="260" text-anchor="middle">3</text>
+              <text class="tick-text" x="338.00" y="260" text-anchor="middle">4</text>
+              <text class="tick-text" x="421.43" y="260" text-anchor="middle">5</text>
+              <text class="tick-text" x="504.86" y="260" text-anchor="middle">6</text>
+              <text class="tick-text" x="588.29" y="260" text-anchor="middle">7</text>
+
+              <text class="axis-title" x="338" y="286" text-anchor="middle">active specialist bots running</text>
+            </svg>
+          </div>
+          <p class="table-caption">Read as: with 3 specialists running, each one sizes trades off one third of account equity.</p>
+        </div>
+
+        <h3>Account-wide caps</h3>
+        <p>
+          Sizing isn't the only backstop. A handful of limits are checked
+          against the whole account, not each bot's slice of it, so they
+          hold no matter how many specialists are active:
+        </p>
+        <ul>
+          <li><strong>Open position cap</strong> &mdash; a maximum number of simultaneous trades across all seven bots combined, read from OANDA's live position data.</li>
+          <li><strong>JPY exposure cap</strong> &mdash; a separate, lower ceiling on open JPY-pair trades specifically, enforced the same way.</li>
+          <li><strong>Daily loss limit</strong> &mdash; always evaluated against full account equity, never a bot's divided share, so it protects the account as a whole. Crossing it pauses every bot for the day.</li>
+          <li><strong>Startup guard</strong> &mdash; starting a bot while positions are already open requires explicit confirmation; the suite never silently begins trading on top of an existing book.</li>
+        </ul>
+      </section>
+
+      <section id="config">
+        <h2>Shared configuration</h2>
+        <p class="section-intro">
+          Every specialist reads the same parameter set from a shared
+          config module, built to hot-reload rather than require a
+          restart, since a restart mid-trade would mean momentarily
+          losing track of an open position:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Parameter</th><th>Default</th><th>What it controls</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="param">RISK_PCT</td><td class="default">0.01</td><td>Fraction of a bot's equity share risked per trade</td></tr>
+              <tr><td class="param">MIN_RR</td><td class="default">2.0</td><td>Minimum reward-to-risk ratio required to take a trade</td></tr>
+              <tr><td class="param">MAX_OPEN_POSITIONS</td><td class="default">3</td><td>Account-wide cap on simultaneous open trades</td></tr>
+              <tr><td class="param">DAILY_LOSS_LIMIT</td><td class="default">0.03</td><td>Account drawdown that pauses every bot for the day</td></tr>
+              <tr><td class="param">JPY_MAX_OPEN</td><td class="default">2</td><td>Account-wide cap on open JPY-pair trades</td></tr>
+              <tr><td class="param">RSI_PERIOD</td><td class="default">50</td><td>Lookback for the Gate 3 RSI confirmation</td></tr>
+              <tr><td class="param">SR_LOOKBACK</td><td class="default">20</td><td>Candles checked each side to confirm a swing high or low</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-caption">
+          Strategy and risk parameters are shared by all seven
+          specialists; only the traded currency and pair list differ
+          between them.
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="disclaimer">
+        This page is a portfolio write-up describing a personal software
+        project, not financial advice, a solicitation, or an offer of any
+        kind. It does not provide access to a trading account, a live
+        dashboard, or any control over the system it describes.
+      </p>
+      <p class="footer-nav">coleman-sagil.dev &mdash; project case studies</p>
+    </div>
+  </footer>
+
 </body>
 </html>

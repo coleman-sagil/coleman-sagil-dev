@@ -4,31 +4,374 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>IntuiMotion &mdash; coleman-sagil.dev</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      max-width: 40rem;
-      margin: 4rem auto;
-      padding: 0 1.5rem;
-      line-height: 1.6;
-    }
-    h1 { margin-bottom: 0.25rem; }
-    .tag {
-      display: inline-block;
-      font-size: 0.85rem;
-      opacity: 0.7;
-      margin-bottom: 2rem;
-    }
-  </style>
+  <meta name="description" content="Gesture-driven mouse, macro, and media control for the original Leap Motion Controller, built on Ultraleap's Gemini hand tracking stack.">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>IntuiMotion</h1>
-  <p class="tag">project page &mdash; coming soon</p>
-  <p>
-    A gesture-control application built around hand-tracking hardware,
-    exploring natural, touch-free interaction. Details and write-up
-    coming soon.
-  </p>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Personal project &mdash; gesture control</p>
+      <h1>IntuiMotion</h1>
+      <p class="lede">
+        Touch-free mouse, macro, and media control for the original Leap
+        Motion Controller. An open, still hand becomes a pointer, a pinch
+        becomes a mouse button, and a swipe changes the track, all riding
+        on Ultraleap's Gemini hand tracking stack.
+      </p>
+      <div class="badges">
+        <span class="badge"><span class="dot dot-live"></span>Gesture pipeline: confirmed on live hardware</span>
+        <span class="badge"><span class="dot dot-tested"></span>Calibration solvers: unit-tested, synthetic only</span>
+        <span class="badge"><span class="dot dot-progress"></span>Camera screen detection: in progress</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+
+      <section id="overview">
+        <h2>What it is</h2>
+        <p class="section-intro">
+          A small pointer replacement: wave your hand in the air near a Leap
+          Motion sensor and it moves your cursor, clicks, drags, scrolls
+          volume, and skips tracks, no touchpad, mouse, or keyboard involved.
+        </p>
+        <p>
+          Ultraleap's Hand Tracking Service does the actual computer vision,
+          turning raw sensor frames into per-hand skeletal data. IntuiMotion
+          sits above that: it watches the tracked hand for a small vocabulary
+          of deliberate gestures, and maps each one to a mouse action, a
+          media key, or a custom macro (a keystroke combo or a shell
+          command) defined in a plain config file, no code changes needed to
+          add a new one.
+        </p>
+        <div class="note">
+          <p>
+            <strong>No live demo on this page.</strong> This is a write-up
+            of the project as it stands, not a control panel; running it for
+            real requires the physical Leap Motion sensor and Ultraleap's
+            tracking service installed on the machine in front of you.
+          </p>
+        </div>
+      </section>
+
+      <section id="gestures">
+        <h2>Gesture vocabulary</h2>
+        <p class="section-intro">
+          The default gesture-to-action mapping. Idle-mode gestures fire
+          while you're not pointing at anything; pointer-mode gestures fire
+          once an open hand has engaged the cursor.
+        </p>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Gesture</th>
+                <th>Mode</th>
+                <th>Trigger</th>
+                <th>Default action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="gesture"><code>palm_engage</code></td>
+                <td><span class="mode-pill mode-transition">Idle &rarr; Pointer</span></td>
+                <td>Open hand held still for about 0.4s</td>
+                <td>Enters pointer mode</td>
+              </tr>
+              <tr>
+                <td class="gesture"><code>pinch</code></td>
+                <td><span class="mode-pill mode-idle">Idle</span></td>
+                <td>Thumb+index pinch</td>
+                <td>Play / pause</td>
+              </tr>
+              <tr>
+                <td class="gesture"><code>left_press</code> / <code>left_release</code></td>
+                <td><span class="mode-pill mode-pointer">Pointer</span></td>
+                <td>Thumb+index pinch start / end</td>
+                <td>Left mouse button down / up</td>
+              </tr>
+              <tr>
+                <td class="gesture"><code>right_press</code> / <code>right_release</code></td>
+                <td><span class="mode-pill mode-pointer">Pointer</span></td>
+                <td>Thumb+middle pinch start / end</td>
+                <td>Right mouse button down / up</td>
+              </tr>
+              <tr>
+                <td class="gesture"><code>fist_exit</code></td>
+                <td><span class="mode-pill mode-transition">Pointer &rarr; Idle</span></td>
+                <td>Fist held for about 0.15s</td>
+                <td>Exits pointer mode</td>
+              </tr>
+              <tr>
+                <td class="gesture"><code>swipe_up</code> / <code>swipe_down</code></td>
+                <td><span class="mode-pill mode-idle">Idle</span></td>
+                <td>Fast vertical hand motion</td>
+                <td>Volume up / down</td>
+              </tr>
+              <tr>
+                <td class="gesture"><code>swipe_right</code> / <code>swipe_left</code></td>
+                <td><span class="mode-pill mode-idle">Idle</span></td>
+                <td>Fast horizontal hand motion</td>
+                <td>Next / previous track</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <p>
+            Mouse buttons mirror pinch state directly instead of firing a
+            one-shot click: press on pinch-start, release on pinch-end. A
+            quick pinch reads as a click, a held pinch reads as a drag, the
+            same as a physical mouse button, with no separate tap-versus-hold
+            timing logic required.
+          </p>
+          <p>
+            Idle-only gestures are briefly suppressed for a short grace
+            window right after <code>fist_exit</code>, so a hand relaxing
+            out of the fist shape doesn't misfire a volume change or
+            play/pause. <code>palm_engage</code> is exempt from that window;
+            an open, still hand can re-engage pointer mode at any time.
+          </p>
+          <p>
+            Right-click detection uses thumb-to-middle-finger distance
+            rather than the tracking library's built-in pinch metric, which
+            is thumb-index only. Whether an ordinary thumb-index pinch can
+            also cross that threshold when the fingers are held close
+            together hasn't been confirmed against a real hand yet.
+          </p>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture</h2>
+        <p class="section-intro">
+          Frame data flows one direction, from sensor to OS action:
+        </p>
+        <ol class="pipeline">
+          <li>
+            <div class="step-name">Leap Motion Controller (USB)</div>
+            <div class="step-desc">the sensor itself</div>
+          </li>
+          <li>
+            <div class="step-name">Ultraleap Hand Tracking Service</div>
+            <div class="step-desc">system daemon doing the actual hand tracking</div>
+          </li>
+          <li>
+            <div class="step-name">LeapC Python bindings</div>
+            <div class="step-desc"><code>leap.Connection</code> / <code>leap.Listener</code></div>
+          </li>
+          <li>
+            <div class="step-name">TrackingListener</div>
+            <div class="step-desc">per-hand frame callback</div>
+          </li>
+          <li>
+            <div class="step-name">GestureInterpreter</div>
+            <div class="step-desc">raw hand data &rarr; discrete gesture events + mode (idle / pointer)</div>
+          </li>
+          <li>
+            <div class="step-name">ActionDispatcher</div>
+            <div class="step-desc">gesture name &rarr; config-mapped action</div>
+          </li>
+          <li>
+            <div class="step-name">Mouse / media / macro actions</div>
+            <div class="step-desc">pynput mouse, media keys, keystrokes, or a shell command</div>
+          </li>
+        </ol>
+        <div class="note">
+          <p>
+            Two things skip that pipeline on purpose. Pointer-mode cursor
+            movement is continuous per-frame motion, not a discrete
+            triggered event, so it's wired directly rather than routed
+            through the dispatcher. Mouse-button press and release work the
+            same way, since they need paired press/release calls tied to the
+            physical timing of the pinch, not a single fire-and-forget
+            action.
+          </p>
+        </div>
+      </section>
+
+      <section id="calibration">
+        <h2>Screen calibration</h2>
+        <p class="section-intro">
+          Two approaches to teaching the app where your screen physically
+          is. They're not two attempts at the same problem, they solve
+          different versions of it.
+        </p>
+        <div class="card-grid">
+          <div class="card">
+            <div class="tag-row">
+              <span class="badge"><span class="dot dot-live"></span>Newer, recommended for monitor/TV</span>
+            </div>
+            <h3>Touch-based edge tracing</h3>
+            <p>
+              Hold both pointer fingers out at the screen's top corners
+              until they lock in place, then trace both fingers down along
+              the screen's real physical edges to the bottom corners,
+              holding still again to lock the endpoint.
+            </p>
+            <p>
+              Because the fingers stay on or near the actual screen surface
+              the whole time, each corner gets measured as a real 3D
+              position directly, with no separately-known screen size
+              required. The traced path is smoothed against the locked
+              points using PCA, for robustness against ordinary hand tremor.
+            </p>
+            <p>
+              Ten unit tests, including recovery from a synthetic noisy
+              trace and a regression guard against the end-lock firing
+              immediately after the start-lock, before any real tracing
+              motion has happened.
+            </p>
+          </div>
+          <div class="card">
+            <div class="tag-row">
+              <span class="badge"><span class="dot dot-progress"></span>Needs real-hardware validation</span>
+            </div>
+            <h3>Ray-walking (corner-pointing)</h3>
+            <p>
+              Point at a screen corner, walk backward while staying pointed
+              at it, close a fist to solidify that corner, and repeat for
+              all four corners in a fixed order. Once all four are
+              solidified, a geometry solver derives the screen's actual
+              corner positions.
+            </p>
+            <p>
+              This technique needs the screen's real physical width and
+              height as input. Testing confirmed that ray geometry alone,
+              right angles, equal sides, a shared plane, with no absolute
+              scale, doesn't uniquely determine the rectangle: two different
+              rectangles can satisfy the same relative-shape constraints
+              from the same four rays. A known size is what actually pins
+              down scale and position.
+            </p>
+            <p>
+              Sixteen unit tests, including two that check the solver
+              against known synthetic 3D ground-truth rectangles rather than
+              just mocked gesture logic. Not yet run against a real
+              calibration session; every timing and distance threshold is an
+              untuned starting point.
+            </p>
+          </div>
+        </div>
+        <div class="note">
+          <p>
+            Edge tracing needs something physical to trace against, so
+            ray-walking stays in the codebase for scenarios without a
+            touchable surface, most plausibly a future augmented-reality
+            mode, where there's nothing physical to run a finger along.
+          </p>
+        </div>
+      </section>
+
+      <section id="camera">
+        <h2>Camera-based screen detection</h2>
+        <div class="badges">
+          <span class="badge"><span class="dot dot-progress"></span>In progress, not wired in yet</span>
+        </div>
+        <p class="section-intro">
+          An OpenCV-based screen finder, absorbed from a standalone
+          computer-vision prototype once that project's camera and
+          detection logic moved onto the same machine as the rest of
+          IntuiMotion.
+        </p>
+        <p>
+          The screen detector looks for the largest 4-sided bright
+          rectangular region in a webcam frame using plain OpenCV contour
+          detection and polygon approximation, no trained model, and
+          returns its four corners in the same canonical order (top-left,
+          top-right, bottom-right, bottom-left) the calibration modules
+          already use.
+        </p>
+        <p>
+          It isn't wired into the live gesture pipeline yet, and hasn't been
+          run against a real camera; validation so far is synthetic frames
+          and mocked capture calls only. Turning &ldquo;a camera can find a
+          screen's corners in pixel space&rdquo; into &ldquo;point at that
+          real screen and control it like a touchscreen&rdquo; needs a
+          coordinate-fusion step, a homography from the camera's
+          pixel-space corners onto the same 3D plane the hand-tracking
+          calibration already solves against, that hasn't been designed
+          yet.
+        </p>
+      </section>
+
+      <section id="status">
+        <h2>Status &amp; known gaps</h2>
+        <p class="section-intro">
+          What's confirmed against real hardware, what's tested but not
+          field-proven, and what's deliberately left untuned for later.
+        </p>
+        <div class="status-grid">
+          <div class="status-card">
+            <span class="badge"><span class="dot dot-live"></span>Confirmed</span>
+            <h4>Core gesture pipeline</h4>
+            <p>Connects to a real sensor, tracks a real hand, and dispatches real mouse and media actions end to end.</p>
+          </div>
+          <div class="status-card">
+            <span class="badge"><span class="dot dot-tested"></span>Tested, not field-proven</span>
+            <h4>Calibration &amp; gesture logic</h4>
+            <p>The state machine, config loading, and both calibration solvers are covered with fake hand data and synthetic geometry, not yet run against a real calibration session.</p>
+          </div>
+          <div class="status-card">
+            <span class="badge"><span class="dot dot-progress"></span>In progress</span>
+            <h4>Camera screen detection</h4>
+            <p>Detection logic exists and is unit-tested against synthetic frames; not yet wired into the live pipeline or run against a real camera.</p>
+          </div>
+        </div>
+        <h3>Known gaps</h3>
+        <ul class="plain">
+          <li>
+            <strong>Cursor mapping bounds are untuned guesses.</strong>
+            Expect jitter or dead zones until they're adjusted against a
+            given sensor's placement and a real hand's actual range of
+            motion.
+          </li>
+          <li>
+            <strong>Pinch, grab, swipe, and dwell thresholds are untuned
+            starting points</strong>, set from limited live debugging rather
+            than systematic tuning. The fist-exit dwell requirement exists
+            because a firm pinch can briefly spike the grab signal past its
+            own threshold, so the fist pose has to hold for a short window
+            instead of firing on a single frame.
+          </li>
+          <li>
+            <strong>No smoothing or deadzone on cursor movement yet.</strong>
+            Raw palm position maps straight to screen pixels every frame.
+          </li>
+          <li>
+            <strong>Two hands in pointer mode at once will fight over the
+            cursor.</strong> Each hand tracks its own mode independently,
+            but there's only one OS cursor, so whichever hand's frame gets
+            processed last each tick wins. Not an issue for the intended use
+            case of one hand on the pointer while the other performs
+            gestures.
+          </li>
+          <li>
+            <strong>The right-click threshold hasn't been checked against
+            an ordinary pinch,</strong> to confirm thumb-to-middle-finger
+            distance and thumb-to-index-finger distance can't be confused
+            when the fingers are all held close together.
+          </li>
+          <li>
+            Nothing in continuous integration exercises the compiled
+            tracking bindings themselves, since that requires the physical
+            sensor; only the gesture-logic state machine and config loading
+            are covered by the automated test suite.
+          </li>
+        </ul>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>IntuiMotion is a personal engineering project, not a product.</p>
+      <p>This page is a write-up of the current build; it doesn't expose any live control surface.</p>
+    </div>
+  </footer>
+
 </body>
 </html>
