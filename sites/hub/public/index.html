@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>coleman-sagil.dev &mdash; Personal Engineering Projects</title>
+  <meta name="description" content="Personal engineering projects, written up in the open: self-hosted LLM inference on an 8GB GPU, gesture control for the Leap Motion Controller, and a 7-bot algorithmic trading suite.">
+  <link rel="stylesheet" href="design-system.css">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/" aria-current="page">Home</a></li>
+        <li><a href="https://local-llm.coleman-sagil.dev/">Local LLM</a></li>
+        <li><a href="https://intuimotion.coleman-sagil.dev/">IntuiMotion</a></li>
+        <li><a href="https://oanda.coleman-sagil.dev/">OANDA</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hub-hero">
+    <div class="wrap-wide">
+      <p class="eyebrow" data-reveal>Personal engineering, written up in the open</p>
+      <h1 data-reveal>Independent systems,<br>built end to end.</h1>
+      <p class="hub-hero__lede" data-reveal>
+        Three personal projects &mdash; self-hosted language model inference,
+        touch-free gesture control, and a multi-bot algorithmic trading
+        suite &mdash; each documented honestly: what works, what doesn't
+        yet, and how it's actually built.
+      </p>
+      <p class="hub-hero__note" data-reveal>
+        Every project below is a write-up, not a live demo or dashboard.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section class="project-grid-section" aria-label="Projects">
+      <div class="wrap-wide">
+        <div class="project-grid">
+
+          <a class="project-card" href="https://local-llm.coleman-sagil.dev/" data-reveal>
+            <div class="project-card__top">
+              <p class="project-card__eyebrow">Self-hosted inference</p>
+              <h2>Local LLM</h2>
+            </div>
+            <p class="project-card__pitch">
+              Large mixture-of-experts language models running entirely
+              offline on a single consumer 8GB GPU &mdash; llama.cpp, a
+              deliberate GPU/CPU offload split, and a streaming CLI plus
+              browser GUI. No cloud API, nothing leaving the machine.
+            </p>
+            <span class="project-card__cta">
+              View project
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+
+          <a class="project-card" href="https://intuimotion.coleman-sagil.dev/" data-reveal>
+            <div class="project-card__top">
+              <p class="project-card__eyebrow">Gesture control</p>
+              <h2>IntuiMotion</h2>
+            </div>
+            <p class="project-card__pitch">
+              Touch-free mouse, macro, and media control for the original
+              Leap Motion Controller. An open, still hand becomes a
+              pointer, a pinch becomes a click, built on Ultraleap's
+              Gemini hand-tracking stack.
+            </p>
+            <span class="project-card__cta">
+              View project
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+
+          <a class="project-card" href="https://oanda.coleman-sagil.dev/" data-reveal>
+            <div class="project-card__top">
+              <p class="project-card__eyebrow">Algorithmic trading &mdash; system design</p>
+              <h2>OANDA Bot Suite</h2>
+            </div>
+            <p class="project-card__pitch">
+              Seven currency-specialist trading bots sharing one account,
+              one strategy, and one risk budget &mdash; a case study in
+              multi-bot coordination and account-wide risk caps, not a
+              live dashboard or trading signal.
+            </p>
+            <span class="project-card__cta">
+              View project
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </a>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p>
+          This is a personal portfolio of independent engineering
+          projects. Every page here, including this one, is a write-up
+          &mdash; none of them expose a live demo, dashboard, or control
+          surface for the systems they describe.
+        </p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/" aria-current="page">Home</a>
+        <a href="https://local-llm.coleman-sagil.dev/">Local LLM</a>
+        <a href="https://intuimotion.coleman-sagil.dev/">IntuiMotion</a>
+        <a href="https://oanda.coleman-sagil.dev/">OANDA</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal project write-ups</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
