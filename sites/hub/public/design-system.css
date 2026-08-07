@@ -348,6 +348,12 @@ code {
    --------------------------------------------------------------------------
    Usage: add `data-reveal` to an element; a small inline script (below)
    adds `is-visible` when it enters the viewport via IntersectionObserver.
+   To stagger a group (e.g. a card grid settling in sequence), set
+   `--reveal-delay` on individual elements — do NOT add your own
+   `transition-delay` declaration, it will fight the shorthand
+   `transition` below and the outcome depends on selector specificity:
+
+     .my-grid .card:nth-child(2) { --reveal-delay: 80ms; }
 
    Safety: the hidden state is scoped under `.js` on <html>, added by an
    early inline script. If JS is off or errors, `.js` is never added, the
@@ -381,11 +387,13 @@ code {
        </script>
    -------------------------------------------------------------------------- */
 
+[data-reveal] { --reveal-delay: 0ms; }
+
 .js [data-reveal] {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity var(--duration-reveal) var(--ease-standard),
-              transform var(--duration-reveal) var(--ease-standard);
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay);
 }
 
 .js [data-reveal].is-visible {
@@ -407,6 +415,10 @@ code {
    ========================================================================== */
 
 .site-nav {
+  /* Uses color-mix() (Safari 16.4+ / Chrome 111+) — acceptable for this
+     suite's audience; if a hard floor on older browsers ever matters,
+     swap for a plain --bg-scrim token with a precomputed rgba value
+     per theme instead. */
   position: sticky;
   top: 0;
   z-index: 50;
