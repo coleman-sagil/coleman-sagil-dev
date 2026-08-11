@@ -178,8 +178,8 @@ section p {
   padding: var(--space-4) var(--space-4);
   background: var(--bg-card);
   box-shadow: var(--shadow-sm);
-  transition: transform var(--duration-base) var(--ease-standard),
-              border-color var(--duration-base) var(--ease-standard);
+  transition: border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
 }
 
 /* [data-reveal]'s shared transition shorthand is higher specificity
@@ -190,17 +190,16 @@ section p {
    hover-specific durations actually apply once an element has settled. */
 .js .currency-badge[data-reveal] {
   transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
-              transform var(--duration-base) var(--ease-standard),
-              border-color var(--duration-base) var(--ease-standard);
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
 }
 
+/* Hover feedback is deliberately motion-free: a border/glow change
+   reads as "interactive" without the translateY this used to carry. */
 .currency-badge:hover {
-  transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .currency-badge:hover { transform: none; }
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
 .currency-grid .currency-badge:nth-child(1) { --reveal-delay: 0ms; }
@@ -239,21 +238,36 @@ section p {
   border-radius: var(--radius-md);
   text-align: center;
   box-shadow: var(--shadow-sm);
-  transition: transform var(--duration-base) var(--ease-standard);
+  transition: box-shadow var(--duration-base) var(--ease-standard);
 }
 
-.gate:hover { transform: scale(1.015); }
+/* Motion-free hover: a ring, not a transform. A non-inset box-shadow
+   paints in the band OUTSIDE the element's border-box, i.e. against
+   whatever's behind it in the stacking context (the page --bg), not
+   against the gate's own gate-1/2/3 fill — so the ring color has to be
+   chosen for contrast against --bg in both themes, via the same themed
+   --accent-strong token used for text emphasis elsewhere on this page
+   (dark: light blue on near-black; light: dark blue on near-white).
+   Do not combine this with var(--shadow-sm): in light mode --shadow-sm
+   resolves to the bare keyword `none`, and a box-shadow value list
+   containing `none` as one of several comma-separated items is invalid
+   at computed-value time, which drops the ENTIRE box-shadow declaration
+   (not just the invalid part) back to its initial value — silently
+   killing the ring, not just the ambient shadow, in light mode only. */
+.gate:hover {
+  box-shadow: 0 0 0 2px var(--accent-strong);
+}
 
 /* Same specificity fix as .currency-badge above: without this, the
    .js [data-reveal] shorthand (0,2,0) beats the plain .gate rule
-   (0,1,0) and the hover scale inherits the slow reveal timing. */
+   (0,1,0) and the hover ring inherits the slow reveal timing. transform
+   is included (matching opacity's timing, not left at 0-delay) so the
+   scroll-in slide and fade settle together instead of transform
+   snapping into place while opacity is still mid-fade. */
 .js .gate[data-reveal] {
   transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
-              transform var(--duration-base) var(--ease-standard);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gate:hover { transform: none; }
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              box-shadow var(--duration-base) var(--ease-standard);
 }
 
 .gate + .gate { margin-top: var(--space-6); }
@@ -357,6 +371,32 @@ section p {
 .grid-line { stroke: var(--border); stroke-width: 1; }
 .axis-title { fill: var(--text-faint); font-size: 11px; }
 
+/* ---------- breakeven win-rate curve ---------- */
+/* Same .chart-block/.chart-frame shell and tick-text/value-text/grid-line
+   tokens as the equity-share bar chart above; only the mark shape (a
+   plotted line instead of bars) and these three classes are new. */
+
+.curve-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.curve-marker {
+  fill: var(--accent-strong);
+  stroke: var(--bg-card);
+  stroke-width: 2;
+}
+
+.guide-line {
+  stroke: var(--text-faint);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.7;
+}
+
 .table-caption {
   font-size: var(--text-sm);
   color: var(--text-faint);
@@ -386,23 +426,20 @@ section p {
   background: var(--bg-card);
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
-  transition: transform var(--duration-base) var(--ease-standard),
-              border-color var(--duration-base) var(--ease-standard);
+  transition: border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
 }
 
 .cap:hover {
-  transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 0 0 1px var(--accent-soft);
 }
 
 .js .cap[data-reveal] {
   transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
-              transform var(--duration-base) var(--ease-standard),
-              border-color var(--duration-base) var(--ease-standard);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cap:hover { transform: none; }
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
 }
 
 .cap h4 {
@@ -477,6 +514,46 @@ td.default {
   white-space: nowrap;
   color: var(--text-dim);
 }
+
+/* ---------- self-hosting: command block ---------- */
+/* No precedent for a multi-line code block elsewhere on this page (the
+   config table uses td.param instead), so this is new: a code-bg panel
+   matching the card idiom used everywhere else (border/radius-md/
+   shadow-sm), holding a <pre><code> block. The global `code` rule in
+   design-system.css styles every <code> element with its own inline
+   background/border/padding, sized for a short one-line snippet; nested
+   inside this panel that would draw a second border/background around
+   the whole block, so it's neutralized below and the panel supplies the
+   only visible container. */
+
+.cmd-block {
+  margin: var(--space-4) 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.cmd-block pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-dim);
+  white-space: pre;
+}
+
+.cmd-block pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+.cmd-comment { color: var(--text-faint); }
 
 /* ---------- footer disclaimer ---------- */
 /* .disclaimer keeps its own class inside .site-footer__notice, per the

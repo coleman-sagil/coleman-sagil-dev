@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Local LLM &mdash; coleman-sagil.dev</title>
-  <meta name="description" content="Running large mixture-of-experts language models locally, entirely offline, on a single consumer 8GB GPU &mdash; a llama.cpp-based inference stack with a streaming CLI and browser GUI.">
+  <meta name="description" content="Running large mixture-of-experts language models locally, entirely offline, on a single consumer 8GB GPU &mdash; a llama.cpp-based inference stack with a streaming CLI and browser GUI, plus a live in-browser demo you can load your own small GGUF into.">
   <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="style.css">
   <script>document.documentElement.classList.add('js');</script>
@@ -43,12 +43,24 @@
         <span class="badge">GGUF</span>
         <span class="badge">Model Context Protocol</span>
         <span class="badge">Offline-first</span>
+        <a class="badge badge--link badge--cta" href="#demo">
+          Try it in your browser &darr;
+        </a>
+        <a class="badge badge--link" href="https://github.com/coleman-sagil/local-llm" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.21c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.09-1.78-.2-3.64-.91-3.64-4.02 0-.89.31-1.62.82-2.19-.08-.2-.36-1.03.08-2.15 0 0 .67-.22 2.2.84a7.4 7.4 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.15.51.57.82 1.29.82 2.19 0 3.12-1.87 3.81-3.65 4.02.29.26.54.76.54 1.53 0 1.11-.01 1.99-.01 2.27 0 .22.15.48.55.4A8.22 8.22 0 0 0 16 8.21C16 3.67 12.42 0 8 0Z"/></svg>
+          View source on GitHub
+        </a>
       </div>
       <div class="scope-note" data-reveal>
-        <strong>This page is a write-up, not a demo.</strong> Every model
-        server described here runs on personal hardware and is not exposed
-        to the internet &mdash; there is no live endpoint on this page to
-        connect to.
+        <strong>Most of this page is still a write-up, not a demo.</strong>
+        The three production models below, the GPU/CPU offload split, and
+        the CLI/MCP tooling all run only on the author's own hardware and
+        are not exposed to the internet &mdash; there is no live endpoint on
+        this page connecting to any of that. The one part that <em>is</em>
+        actually live: a small, entirely browser-side demo further down
+        this page, where you can load a small GGUF file of your own and
+        chat with it, no server involved on either end.
+        <a href="#demo">Jump to it &darr;</a>
       </div>
     </div>
   </header>
@@ -403,6 +415,161 @@
         </div>
       </section>
 
+      <section id="demo">
+        <p class="eyebrow" data-reveal>09 &middot; Live demo</p>
+        <h2 data-reveal>Load your own GGUF and chat with it, right here</h2>
+        <p class="section-intro" data-reveal>
+          Unlike everything above, this part of the page is not a
+          description of something running elsewhere &mdash; it actually
+          runs, in this tab, right now. Pick a small GGUF file from your own
+          machine below and it loads and runs entirely client-side, via
+          <a href="https://github.com/ngxson/wllama" target="_blank" rel="noopener">wllama</a>,
+          a WebAssembly build of llama.cpp that runs inside the browser
+          itself. Nothing you select is uploaded anywhere &mdash; there is
+          no server on the other end of this page to send it to. This site
+          is static file hosting, full stop.
+        </p>
+        <div class="note warn" data-reveal>
+          <p>
+            <strong>This is not the 43&ndash;65GB production setup described
+            above, and it can't be.</strong> A browser tab, running a single
+            WebAssembly thread with no GPU offload, can realistically handle
+            only a small quantized GGUF &mdash; roughly under 2GB, and even
+            well under that will be noticeably slow compared to the
+            CUDA-accelerated setup above. Point this at Scout or either Qwen
+            model from the roster above and it will not work: it will hang
+            the tab or run the browser out of memory long before it
+            finishes loading. Use something genuinely small instead &mdash;
+            a "tiny"/toy GGUF, or a small quantized instruct model in the
+            hundreds-of-MB to low-single-digit-GB range.
+          </p>
+        </div>
+        <div class="note" data-reveal>
+          <p>
+            <strong>Browser requirements, stated plainly.</strong> This demo
+            deliberately disables wllama's own default fallback for browsers
+            without the WebAssembly features it needs (JSPI and Memory64),
+            because that fallback loads its files from a CDN, and this page
+            makes zero requests to any host you didn't ask it to. The
+            consequence: a browser without native support for those two
+            features simply can't run this demo. Confirmed working in a
+            recent Chromium-based desktop browser (Chrome); older browsers,
+            and possibly Safari, may not work here at all &mdash; that's a
+            real gap, not a hedge.
+          </p>
+        </div>
+
+        <div class="demo-panel">
+          <div class="demo-panel__row">
+            <input type="file" id="demo-file" accept=".gguf" aria-label="Choose a GGUF model file">
+            <button type="button" id="demo-load" class="btn btn--primary" disabled>Load model</button>
+            <button type="button" id="demo-reset" class="btn" disabled>Reset</button>
+          </div>
+          <div class="demo-status">
+            <span class="badge">
+              <span class="dot dot-faint" id="demo-status-dot"></span>
+              <span id="demo-status-text">No model loaded.</span>
+            </span>
+          </div>
+
+          <div class="demo-chat">
+            <div class="demo-chat__log" id="demo-chat-log" aria-live="polite"></div>
+            <form id="demo-chat-form" class="demo-chat__form" hidden>
+              <input type="text" id="demo-chat-input" placeholder="Say something&hellip;" autocomplete="off" disabled>
+              <button type="submit" id="demo-send" class="btn btn--primary" disabled>Send</button>
+              <button type="button" id="demo-stop" class="btn" hidden>Stop</button>
+              <button type="button" id="demo-clear" class="btn">Clear chat</button>
+            </form>
+            <p class="demo-chat__caption">Fixed for this demo: 2048-token context, 256-token replies, single WASM thread, no GPU offload.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="cli-yourself">
+        <p class="eyebrow" data-reveal>10 &middot; Try the real thing</p>
+        <h2 data-reveal>Run the CLI yourself</h2>
+        <p class="section-intro" data-reveal>
+          The browser demo above is deliberately small and self-contained.
+          The actual project it's standing in for &mdash; the terminal CLI
+          described in section 05, talking to a real <code>llama-server</code>
+          process on your own hardware &mdash; is real, runnable code, and
+          the source is public. This section is the setup for running that,
+          not the browser demo.
+        </p>
+        <h3 data-reveal>Get the source</h3>
+        <p data-reveal>
+          <a href="https://github.com/coleman-sagil/local-llm" target="_blank" rel="noopener">github.com/coleman-sagil/local-llm</a>
+          is the real repository this whole page describes.
+        </p>
+        <pre class="code-block" data-reveal><code>git clone https://github.com/coleman-sagil/local-llm.git
+cd local-llm
+pip install requests</code></pre>
+        <p data-reveal>
+          <code>requests</code> is the only third-party dependency the core
+          chat client (<code>cli/llmcli.py</code>) imports; everything else
+          it uses is Python standard library. The optional
+          <code>--tools</code> layer additionally needs the MCP Python SDK:
+          <code>pip install mcp</code>.
+        </p>
+        <h3 data-reveal>What the repo does and doesn't ship</h3>
+        <p data-reveal>
+          Two directories that matter are deliberately not in the repo:
+          <code>models/</code> (the GGUF weight files themselves &mdash;
+          tens of gigabytes, wrong tool for git) and <code>llama.cpp/</code>
+          (the inference engine, vendored and built from source, also
+          gitignored). A fresh clone gets you the CLI, the GUI picker, and
+          <code>bin/start-model.sh</code>/<code>bin/stop-model.sh</code>
+          &mdash; but not a working <code>llama-server</code> binary or any
+          models to point it at. To actually run something, you need your
+          own compiled <code>llama-server</code> (build
+          <a href="https://github.com/ggml-org/llama.cpp" target="_blank" rel="noopener">llama.cpp</a>
+          from source, CUDA support optional) and your own GGUF file,
+          serving an OpenAI-compatible <code>/v1/chat/completions</code>
+          endpoint.
+        </p>
+        <h3 data-reveal>Point the CLI at a server</h3>
+        <p data-reveal>
+          <code>cli/llmcli.py</code> itself is a thin, generic client: it
+          only knows how to POST to <code>/v1/chat/completions</code> on
+          <code>127.0.0.1</code> at a fixed port per model name. It never
+          starts a server itself. The three names it ships with are this
+          project's own three models:
+        </p>
+        <pre class="code-block" data-reveal><code>scout      -&gt; http://127.0.0.1:8090   (Llama-4-Scout)
+qwen       -&gt; http://127.0.0.1:8091   (Qwen3-Coder-Next)
+qwen-next  -&gt; http://127.0.0.1:8092   (Qwen3-Next-80B-A3B-Instruct)</code></pre>
+        <p data-reveal>
+          Two ways to actually use it against your own setup: either edit
+          the <code>MODEL_PORTS</code> dict at the top of
+          <code>cli/llmcli.py</code> to add your own model name and port, or
+          get your own <code>llama-server</code> listening on one of the
+          three ports above and just use that model name as-is. If you have
+          your own GGUF files at the exact paths
+          <code>bin/start-model.sh</code> expects, that script will also
+          start/stop the server for you:
+        </p>
+        <pre class="code-block" data-reveal><code>bin/start-model.sh scout --cpu-only   # or: qwen, qwen-next
+python3 cli/llmcli.py --model scout
+bin/stop-model.sh  scout</code></pre>
+        <p data-reveal>
+          Once connected, it's the same REPL described in section 05:
+          type at the <code>you&gt;</code> prompt, the reply streams back
+          token by token, <code>/clear</code> wipes conversation history
+          without restarting the server, <code>/exit</code> (or Ctrl+D)
+          ends the session, and Ctrl+C interrupts cleanly mid-stream. Add
+          <code>--tools</code> to layer on the MCP tool-calling REPL
+          described in the same section &mdash; non-streaming, every tool
+          call gated behind a manual y/n confirmation, configured through
+          your own <code>cli/mcp_servers.json</code>.
+        </p>
+        <pre class="code-block" data-reveal><code>python3 cli/llmcli.py --model qwen --tools</code></pre>
+        <p data-reveal>
+          If the server isn't reachable, the CLI fails fast with the exact
+          command to start it, rather than hanging or printing a stack
+          trace &mdash; that behavior is real and unchanged from section 05.
+        </p>
+      </section>
+
     </div>
   </main>
 
@@ -440,6 +607,8 @@
       els.forEach(function (el) { io.observe(el); });
     })();
   </script>
+
+  <script type="module" src="demo.js"></script>
 
 </body>
 </html>

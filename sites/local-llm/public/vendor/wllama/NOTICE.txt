@@ -1,0 +1,21 @@
+wllama — WebAssembly binding for llama.cpp
+https://github.com/ngxson/wllama
+
+Vendored files (committed as static assets, not fetched at runtime):
+  wllama.esm.js   from @wllama/wllama@3.5.1, esm/index.js (unminified, unmodified)
+  wllama.wasm     from @wllama/wllama@3.5.1, esm/wasm/wllama.wasm (unmodified)
+
+Fetched via `npm pack @wllama/wllama@3.5.1` from the public npm registry and
+extracted locally. Not modified beyond copying out of the package tarball.
+
+License: MIT (see LICENSE in this directory).
+
+Why vendored instead of loaded from a CDN: this site never makes requests to
+any host the visitor didn't knowingly trigger themselves. See
+sites/local-llm/public/demo.js for the one deliberate deviation from the
+library's own default behavior — wllama defaults to a CDN-hosted
+compatibility fallback (jsdelivr) for browsers lacking WebAssembly JSPI /
+Memory64 support; that fallback is explicitly disabled here
+(`wllama.setCompat(null)`) so the page never fetches anything from jsdelivr.
+Browsers that would have needed that fallback simply can't run this demo —
+see the in-page note next to the demo for what that means in practice.

@@ -1,4 +1,4 @@
-/* Local LLM — project write-up.
+/* Local LLM — project write-up, plus a real client-side demo.
    Loads shared/design-system.css (copied to design-system.css in this
    directory) first; everything here is local-llm-specific layout on top
    of those tokens. No accent override — this site uses the suite default
@@ -86,6 +86,21 @@ header.hero h1 {
 .dot-good { background: var(--good); }
 .dot-warn { background: var(--warn); }
 .dot-faint { background: var(--text-faint); }
+
+/* Transient "in progress" state (e.g. a model loading) — distinct from the
+   settled good/warn/faint states above. The pulse is a plain CSS animation,
+   so it already inherits the sitewide reduced-motion kill-switch in
+   design-system.css (animation-duration forced to ~0) with no extra work
+   needed here. */
+.dot-progress {
+  background: var(--accent);
+  animation: dot-progress-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes dot-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
 
 .scope-note {
   padding: var(--space-4) var(--space-5);
@@ -398,4 +413,213 @@ td.model-name { color: var(--text); font-weight: 600; white-space: nowrap; }
   tbody tr:hover {
     transform: none;
   }
+}
+
+/* ---------- source-link badge ----------
+   A .badge rendered as an <a>, for linking out to the project's real
+   GitHub repo. Distinct from the plain informational .badge spans: it
+   gets a hover/focus state so it reads as interactive. */
+.badge--link {
+  align-self: flex-start;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.badge--link:hover,
+.badge--link:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.badge--link svg { flex: none; }
+
+/* The hero's one call-to-action badge, pointing at #demo. Same interactive
+   shape as .badge--link, filled instead of outlined so it reads as the
+   primary action among the row of plain informational badges. */
+.badge--cta {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.badge--cta:hover,
+.badge--cta:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ---------- buttons (demo panel) ---------- */
+
+/* Both .btn and .demo-chat__form below set their own `display`, which (per
+   normal CSS cascade rules) overrides the UA stylesheet's default
+   `[hidden] { display: none }` the moment an element carries a class this
+   file also styles. demo.js relies on toggling the plain `hidden` attribute
+   (e.g. the Stop button, the whole chat form before a model is loaded), so
+   restore that semantic here rather than re-deriving "is this hidden" in
+   every rule below. */
+[hidden] { display: none !important; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 0.6em 1.1em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard),
+              color var(--duration-fast) var(--ease-standard);
+}
+.btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent-strong);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+/* ---------- live demo panel ---------- */
+
+.demo-panel {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+}
+
+.demo-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+#demo-file {
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  max-width: 100%;
+}
+#demo-file::file-selector-button {
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: 0.55em 1em;
+  margin-right: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+#demo-file::file-selector-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.demo-status .badge { font-size: var(--text-sm); }
+
+.demo-chat__log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 5rem;
+  max-height: 24rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.demo-chat__log:empty::before {
+  content: "Load a model above, then say something.";
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+.demo-msg__role {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-faint);
+  margin-bottom: var(--space-1);
+}
+.demo-msg--user .demo-msg__role { color: var(--accent-strong); }
+.demo-msg__body {
+  font-size: var(--text-sm);
+  color: var(--text);
+  line-height: var(--leading-normal);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.demo-chat__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+#demo-chat-input {
+  flex: 1 1 12rem;
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 0.6em 0.9em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+#demo-chat-input:disabled { opacity: 0.6; }
+
+.demo-chat__caption {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+/* ---------- inline code blocks (CLI section) ---------- */
+
+.code-block {
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--code-bg);
+  box-shadow: var(--shadow-sm);
+}
+.code-block code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text);
+  white-space: pre;
 }

@@ -27,6 +27,7 @@
   </nav>
 
   <header class="hero">
+    <div class="hero-flow" aria-hidden="true"></div>
     <div class="wrap">
       <p class="eyebrow" data-reveal>Personal project &mdash; gesture control</p>
       <h1 data-reveal>IntuiMotion</h1>
@@ -40,6 +41,10 @@
         <span class="badge"><span class="dot dot-live"></span>Gesture pipeline: confirmed on live hardware</span>
         <span class="badge"><span class="dot dot-tested"></span>Calibration solvers: unit-tested, synthetic only</span>
         <span class="badge"><span class="dot dot-progress"></span>Camera screen detection: in progress</span>
+        <a class="badge badge--link" href="https://github.com/coleman-sagil/IntuiMotion" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.21c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.09-1.78-.2-3.64-.91-3.64-4.02 0-.89.31-1.62.82-2.19-.08-.2-.36-1.03.08-2.15 0 0 .67-.22 2.2.84a7.4 7.4 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.15.51.57.82 1.29.82 2.19 0 3.12-1.87 3.81-3.65 4.02.29.26.54.76.54 1.53 0 1.11-.01 1.99-.01 2.27 0 .22.15.48.55.4A8.22 8.22 0 0 0 16 8.21C16 3.67 12.42 0 8 0Z"/></svg>
+          View source on GitHub
+        </a>
       </div>
     </div>
   </header>
@@ -415,6 +420,60 @@
         });
       }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
       els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+  <div class="cursor-flow" aria-hidden="true"></div>
+  <script>
+    (function () {
+      // Required check before this JS-driven animation does anything at
+      // all: a CSS transition/animation duration override can't stop a
+      // requestAnimationFrame loop, so this has to be its own gate.
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      // A pointer-follow glow only means anything with a real, hovering
+      // pointer; skip it on touch (the CSS also hides the element on
+      // coarse/no-hover input as a backstop if this ever runs anyway).
+      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+      var el = document.querySelector('.cursor-flow');
+      if (!el) return;
+
+      var targetX = 0, targetY = 0;
+      var x = null, y = null;
+      var running = false;
+
+      function tick() {
+        var dx = targetX - x, dy = targetY - y;
+        if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
+          x = targetX;
+          y = targetY;
+          running = false;
+        } else {
+          x += dx * 0.16;
+          y += dy * 0.16;
+          requestAnimationFrame(tick);
+        }
+        el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+      }
+
+      window.addEventListener('pointermove', function (e) {
+        targetX = e.clientX;
+        targetY = e.clientY;
+        if (x === null) {
+          x = targetX;
+          y = targetY;
+          el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+        }
+        el.classList.add('is-active');
+        if (!running) {
+          running = true;
+          requestAnimationFrame(tick);
+        }
+      }, { passive: true });
+
+      window.addEventListener('blur', function () {
+        el.classList.remove('is-active');
+      });
     })();
   </script>
 

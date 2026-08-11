@@ -169,6 +169,59 @@
           target, the next S/R level out, offers at least a 2:1
           reward-to-risk ratio.
         </p>
+        <p data-reveal>
+          That 2:1 floor isn't an arbitrary round number: it sets how
+          often a trade actually has to win before the rule set is
+          net-positive at all, which is worth showing directly rather
+          than taking on faith.
+        </p>
+
+        <div class="chart-block" data-reveal>
+          <p class="chart-caption">Breakeven win rate by minimum reward:risk ratio</p>
+          <p class="chart-subcaption">
+            Pure algebra from this page's own MIN_RR rule: breakeven win
+            rate = 1 &divide; (1 + R). Not a performance result, a
+            backtest, or live trading data &mdash; no trading data
+            appears anywhere on this page.
+          </p>
+          <div class="chart-frame">
+            <svg viewBox="0 0 640 300" role="img" aria-label="Line chart. Breakeven win rate falls as the required reward:risk ratio R rises, following breakeven win rate equals 100 divided by 1 plus R: at R 0.5, 66.7%; at R 1.0, 50%; at R 1.5, 40%; at R 2.0, 33.3%, marked as this page's MIN_RR parameter; at R 2.5, 28.6%; at R 3.0, 25%; at R 3.5, 22.2%; at R 4.0, 20%; at R 4.5, 18.2%; at R 5.0, 16.7%.">
+              <line class="grid-line" x1="46" y1="24" x2="630" y2="24"></line>
+              <line class="grid-line" x1="46" y1="79" x2="630" y2="79"></line>
+              <line class="grid-line" x1="46" y1="134" x2="630" y2="134"></line>
+              <line class="grid-line" x1="46" y1="189" x2="630" y2="189"></line>
+              <line class="axis-line" x1="46" y1="244" x2="630" y2="244"></line>
+
+              <text class="tick-text" x="40" y="28" text-anchor="end">100</text>
+              <text class="tick-text" x="40" y="83" text-anchor="end">75</text>
+              <text class="tick-text" x="40" y="138" text-anchor="end">50</text>
+              <text class="tick-text" x="40" y="193" text-anchor="end">25</text>
+              <text class="tick-text" x="40" y="248" text-anchor="end">0</text>
+
+              <text class="tick-text" x="130" y="260" text-anchor="middle">1:1</text>
+              <text class="tick-text" x="250" y="260" text-anchor="middle">2:1</text>
+              <text class="tick-text" x="370" y="260" text-anchor="middle">3:1</text>
+              <text class="tick-text" x="490" y="260" text-anchor="middle">4:1</text>
+              <text class="tick-text" x="610" y="260" text-anchor="middle">5:1</text>
+
+              <path class="curve-line" d="M 70.0,97.33 L 82.0,106.5 L 94.0,114.59 L 106.0,121.78 L 118.0,128.21 L 130.0,134.0 L 142.0,139.24 L 154.0,144.0 L 166.0,148.35 L 178.0,152.33 L 190.0,156.0 L 202.0,159.38 L 214.0,162.52 L 226.0,165.43 L 238.0,168.14 L 250.0,170.67 L 262.0,173.03 L 274.0,175.25 L 286.0,177.33 L 298.0,179.29 L 310.0,181.14 L 322.0,182.89 L 334.0,184.54 L 346.0,186.11 L 358.0,187.59 L 370.0,189.0 L 382.0,190.34 L 394.0,191.62 L 406.0,192.84 L 418.0,194.0 L 430.0,195.11 L 442.0,196.17 L 454.0,197.19 L 466.0,198.17 L 478.0,199.1 L 490.0,200.0 L 502.0,200.86 L 514.0,201.69 L 526.0,202.49 L 538.0,203.26 L 550.0,204.0 L 562.0,204.71 L 574.0,205.4 L 586.0,206.07 L 598.0,206.71 L 610.0,207.33"></path>
+
+              <line class="guide-line" x1="250" y1="124" x2="250" y2="163"></line>
+              <circle class="curve-marker" cx="250" cy="170.67" r="5"><title>MIN_RR = 2.0 &#8594; 33.3% breakeven win rate</title></circle>
+
+              <text class="value-text" x="250" y="108" text-anchor="middle">MIN_RR = 2.0</text>
+              <text class="tick-text" x="250" y="123" text-anchor="middle">33.3% breakeven win rate</text>
+
+              <text class="axis-title" x="338" y="286" text-anchor="middle">minimum reward:risk ratio (R)</text>
+            </svg>
+          </div>
+          <p class="table-caption">
+            Read as: at a 2:1 minimum reward:risk ratio, this rule set
+            only needs to win more often than 33.3% of the time to be
+            net-positive before costs; spread and slippage aren't
+            modeled here, or anywhere else on this page.
+          </p>
+        </div>
 
         <h3 data-reveal>Post-news mode</h3>
         <p data-reveal>
@@ -307,6 +360,94 @@
           Strategy and risk parameters are shared by all seven
           specialists; only the traded currency and pair list differ
           between them.
+        </p>
+      </div>
+    </section>
+
+    <section id="get-the-suite">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Self-hosting</p>
+        <h2 data-reveal>Get the suite</h2>
+        <p class="section-intro" data-reveal>
+          There's no public repository to clone yet. What follows
+          describes how the project is actually laid out and what
+          setting it up from scratch looks like, not a download link.
+        </p>
+
+        <h3 data-reveal>What it needs</h3>
+        <p data-reveal>
+          Python 3 and pip, on Linux or macOS &mdash; the suite
+          coordinates its seven bot processes with POSIX file locking,
+          which Windows doesn't have natively, so Windows users run it
+          inside WSL2. A setup script installs the Python dependencies
+          (the OANDA API client, pandas and numpy for indicator math,
+          Streamlit for the dashboard, and a handful of others) with one
+          command.
+        </p>
+
+        <h3 data-reveal>How it's laid out</h3>
+        <p data-reveal>
+          One module per concern, all reading from the same shared
+          configuration:
+        </p>
+        <div class="table-wrap" data-reveal>
+          <table>
+            <thead>
+              <tr><th>Module</th><th>Role</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>config.py</code></td><td>Shared parameters, the same ones in the table above, plus the currency-pair mapping that assigns every OANDA instrument to exactly one of the seven groups.</td></tr>
+              <tr><td><code>bot.py</code></td><td>The specialist process itself; one instance per currency group, e.g. started as <code>python3 bot.py --group JPY</code>.</td></tr>
+              <tr><td><code>strategy.py</code>, <code>indicators.py</code>, <code>levels.py</code></td><td>The three-gate entry logic and support/resistance detection described above.</td></tr>
+              <tr><td><code>risk.py</code>, <code>executor.py</code></td><td>Position sizing, the account-wide caps, and order placement.</td></tr>
+              <tr><td><code>suite.py</code></td><td>The cross-process coordination layer: POSIX file locking across specialists and the equity-share-per-bot sizing divisor described above. Imported by <code>bot.py</code>, <code>risk.py</code>, <code>executor.py</code>, and <code>dashboard.py</code> alike.</td></tr>
+              <tr><td><code>news.py</code>, <code>swing.py</code>, <code>learner.py</code></td><td><code>news.py</code> watches the economic calendar for high-impact releases; <code>swing.py</code> evaluates the post-news Fibonacci-retracement entries described above once one fires; <code>learner.py</code> is a self-learning win-probability filter.</td></tr>
+              <tr><td><code>dashboard.py</code></td><td>The Streamlit control panel that starts, stops, and configures bots; bound to localhost only, never the network.</td></tr>
+              <tr><td><code>backtest.py</code></td><td>Replays the strategy against historical candles before anything runs against a real account.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 data-reveal>Config and credentials</h3>
+        <p data-reveal>
+          Everything reads from that one shared config module at
+          startup, which in turn loads a local <code>.env</code> file
+          that never gets committed anywhere. Three values matter to
+          start: an API token, an account ID, and which OANDA
+          environment to point at.
+        </p>
+        <div class="cmd-block" data-reveal>
+          <pre><code><span class="cmd-comment"># copy the template, then edit it</span>
+cp .env.example .env
+
+<span class="cmd-comment"># inside .env</span>
+OANDA_API_KEY=<span class="cmd-comment">your token</span>
+OANDA_ACCOUNT_ID=<span class="cmd-comment">your account id</span>
+OANDA_ENVIRONMENT=practice<span class="cmd-comment">   # or live, once you trust it</span></code></pre>
+        </div>
+        <p data-reveal>
+          OANDA issues practice credentials for free against a
+          fake-money demo account, which is what a first run should
+          point at. Every risk parameter in the table further up is
+          read from that same config module and stays hot-reloadable
+          from the dashboard, so tuning them doesn't need a restart
+          either.
+        </p>
+
+        <h3 data-reveal>Running it</h3>
+        <p data-reveal>
+          A setup script installs dependencies; a backtest run against
+          historical candles comes before anything else; then a launch
+          script starts the dashboard on <code>127.0.0.1:8501</code>
+          only, and every specialist bot gets started and stopped from
+          its sidebar from there. One more script stops everything,
+          bots and dashboard together, in a single call.
+        </p>
+        <p data-reveal>
+          None of that is reachable from this page. As the callout up
+          top says, this write-up doesn't start, stop, or connect to
+          anything &mdash; it's a description of what running it
+          yourself would involve.
         </p>
       </div>
     </section>

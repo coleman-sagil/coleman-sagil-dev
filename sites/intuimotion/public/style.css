@@ -35,6 +35,44 @@
   --accent-soft: rgba(20, 125, 106, 0.1);
 }
 
+/* ---------- second identity hue: --accent2 (magenta/violet) ----------
+   Site-scoped only (per design-system.css's rule: only the --accent*
+   trio may be overridden per-site, and only from a site's own
+   style.css). This is a second, equally-shaped trio for the same
+   purpose: giving THIS page a bit more color energy than a single
+   accent allows, for decorative/motion use only. Never used for body
+   text, which stays on the shared --text/--text-dim/--text-faint
+   scale from design-system.css. Chosen to sit clearly apart from the
+   suite's semantic --good/--warn/--bad hues and from the default
+   suite indigo, so pairing it with the teal --accent reads as a
+   deliberate two-color identity, not a clash. Same three-layer
+   theme-override shape as --accent above. */
+:root {
+  --accent2: #e26fe0;
+  --accent2-strong: #f4a8f2;
+  --accent2-soft: rgba(226, 111, 224, 0.22);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) {
+    --accent2: #a4179f;
+    --accent2-strong: #7a0f76;
+    --accent2-soft: rgba(164, 23, 159, 0.1);
+  }
+}
+
+:root[data-theme="dark"] {
+  --accent2: #e26fe0;
+  --accent2-strong: #f4a8f2;
+  --accent2-soft: rgba(226, 111, 224, 0.22);
+}
+
+:root[data-theme="light"] {
+  --accent2: #a4179f;
+  --accent2-strong: #7a0f76;
+  --accent2-soft: rgba(164, 23, 159, 0.1);
+}
+
 /* Links inside page prose only — scoped to `main` so it can't override
    .site-nav__links / .site-footer__links, which set their own color and
    text-decoration in design-system.css. */
@@ -66,6 +104,72 @@ header.hero::before {
   background: radial-gradient(closest-side, var(--accent-soft), transparent 70%);
   pointer-events: none;
   z-index: -1;
+}
+
+/* ---------- hero flow (fluid, gesture-like motion) ----------
+   The one piece of motion on this page meant to read as "gesture" on
+   sight: a slow-turning two-hue gradient, standing in for the open
+   hand becoming a pointer that the copy describes. Deliberately not
+   filter: blur() — a large blurred layer gets repainted every frame
+   of a 26s rotation, which is wasteful for a documentation page; the
+   soft edge instead comes from a radial-gradient mask, which the
+   compositor handles far more cheaply alongside the transform
+   animation. Sits behind the static ::before wash above (z-index -2
+   vs -1) so both layer together without fighting for the same space.
+   No data-reveal here: it's ambient chrome, not content, so it runs
+   from first paint rather than waiting on scroll. */
+.hero-flow {
+  position: absolute;
+  top: -13rem;
+  left: 50%;
+  width: 42rem;
+  height: 42rem;
+  margin-left: -21rem;
+  /* No border-radius here: the mask below already clips this to a
+     circle (closest-side on a square box), so a border-radius would
+     be dead weight implying a clip that isn't its job. */
+  background: conic-gradient(from 0deg at 50% 50%,
+    color-mix(in srgb, var(--accent) 55%, transparent),
+    color-mix(in srgb, var(--accent2) 55%, transparent) 35%,
+    color-mix(in srgb, var(--accent) 55%, transparent) 65%,
+    color-mix(in srgb, var(--accent2) 55%, transparent) 85%,
+    color-mix(in srgb, var(--accent) 55%, transparent));
+  -webkit-mask-image: radial-gradient(closest-side, black 0%, black 45%, transparent 100%);
+  mask-image: radial-gradient(closest-side, black 0%, black 45%, transparent 100%);
+  opacity: .55;
+  pointer-events: none;
+  z-index: -2;
+  animation: hero-flow-drift 26s linear infinite;
+}
+
+/* Dark mode's --accent/--accent2 are pale, so the wash reads gently
+   there at .55 opacity; light mode's are deep, saturated brand colors
+   (see the override blocks above), so the same conic-gradient needs a
+   somewhat lower element opacity in light mode or it prints as a
+   heavy stain on a near-white background instead of a light wash.
+   Kept high enough (.42, not lower) that it still reads as real
+   color rather than fading into gray haze — this is the page's one
+   deliberately vivid, attention-grabbing element, and light mode
+   needs to earn that too, not just dark mode. Same three-layer guard
+   as every other themed value in this file. */
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) .hero-flow { opacity: .42; }
+}
+:root[data-theme="light"] .hero-flow { opacity: .42; }
+:root[data-theme="dark"] .hero-flow { opacity: .55; }
+
+@keyframes hero-flow-drift {
+  to { transform: rotate(360deg); }
+}
+
+/* Belt-and-suspenders beyond design-system.css's shared kill-switch
+   (which already forces animation-duration near 0 and
+   iteration-count to 1 under reduced motion, so this rule is
+   technically redundant): stopping the animation outright, rather
+   than letting it complete one near-instant rotation, means the wash
+   never visibly jumps for a reduced-motion viewer. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-flow { animation: none; }
 }
 
 .eyebrow {
@@ -232,8 +336,19 @@ td.gesture { color: var(--text); white-space: nowrap; }
   border: 1px solid var(--border);
   color: var(--text-dim);
 }
-.mode-idle { background: var(--accent-soft); }
-.mode-pointer { background: var(--warn-soft); }
+/* Idle and Pointer get the two identity hues, so the two real modes
+   read as distinct colors at a glance; Transition stays neutral
+   on purpose, it's a momentary trigger, not a sustained mode. */
+.mode-idle {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent-strong);
+}
+.mode-pointer {
+  background: var(--accent2-soft);
+  border-color: color-mix(in srgb, var(--accent2) 40%, var(--border));
+  color: var(--accent2-strong);
+}
 .mode-transition { background: var(--bg-raised); }
 
 /* ---------- architecture pipeline ---------- */
@@ -331,6 +446,26 @@ td.gesture { color: var(--text); white-space: nowrap; }
   box-shadow: var(--shadow-md);
 }
 
+/* Pre-existing gap closed while touching this file: .card carries
+   data-reveal in the markup, so .js [data-reveal]'s shorthand
+   (0,2,0) was beating the plain .card rule above (0,1,0) and the
+   hover transition was silently inheriting the slow 700ms reveal
+   timing instead of --duration-base. Same fix shape as
+   sites/oanda/public/style.css's .currency-badge/.gate/.cap. */
+/* transform carries var(--reveal-delay) too (matching opacity) so the
+   scroll-in slide and fade settle together instead of transform
+   snapping into place while opacity is still mid-fade on staggered
+   cards. Trade-off, accepted deliberately: since :hover also animates
+   transform, a settled card's hover-lift now carries that same
+   per-card delay (0-160ms) rather than firing instantly — a small cost
+   against a first-load entrance that's actually staggered correctly. */
+.js .card[data-reveal] {
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
+}
+
 .card .tag-row {
   display: flex;
   align-items: center;
@@ -376,6 +511,15 @@ td.gesture { color: var(--text); white-space: nowrap; }
   box-shadow: var(--shadow-md);
 }
 
+/* Same pre-existing gap as .card above, same fix, same transform+delay
+   trade-off (see the comment on .js .card[data-reveal] above). */
+.js .status-card[data-reveal] {
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              border-color var(--duration-base) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard);
+}
+
 .status-card .badge { margin-bottom: var(--space-3); }
 
 .status-card h4 {
@@ -399,3 +543,58 @@ td.gesture { color: var(--text); white-space: nowrap; }
 
 .site-footer__notice p { margin: 0 0 var(--space-2); }
 .site-footer__notice p:last-child { margin-bottom: 0; }
+
+/* ---------- source-link badge ----------
+   A .badge rendered as an <a>, for linking out to the project's real
+   GitHub repo. Distinct from the plain informational .badge spans: it
+   gets a hover/focus state so it reads as interactive. */
+.badge--link {
+  align-self: flex-start;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.badge--link:hover,
+.badge--link:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.badge--link svg { flex: none; }
+
+/* ---------- cursor flow (pointer-follow glow) ----------
+   A small glow that eases toward the pointer, standing in for this
+   project's own "an open, still hand becomes a pointer" idea. Fixed,
+   inert (pointer-events: none), and purely decorative — it never
+   intercepts clicks, drags, or scrolling. Driven from the small
+   inline script at the bottom of index.html, which:
+     - checks prefers-reduced-motion before ever starting its
+       requestAnimationFrame loop (never just relies on this CSS), and
+     - only starts on fine-pointer/hover-capable input in the first
+       place, since a trailing cursor glow has no meaning on touch.
+   The (hover: none), (pointer: coarse) rule below is a CSS-only
+   backstop for that same touch case, so the dot can never get stuck
+   rendered at a stale last-tap position. Element starts at opacity 0
+   and only the script's is-active class reveals it, so nothing shows
+   before a real pointer position is known or if JS never runs. */
+.cursor-flow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent2-soft), transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 80;
+  transition: opacity var(--duration-base) var(--ease-standard);
+  will-change: transform;
+}
+
+.cursor-flow.is-active { opacity: 1; }
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-flow { display: none; }
+}
