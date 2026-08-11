@@ -85,6 +85,7 @@
 }
 
 .project-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -92,16 +93,26 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-8) var(--space-6) var(--space-6);
-  text-decoration: none;
-  color: inherit;
   box-shadow: var(--shadow-sm);
   transition: transform var(--duration-base) var(--ease-standard),
               border-color var(--duration-base) var(--ease-standard),
               box-shadow var(--duration-base) var(--ease-standard);
 }
 
-.project-card:hover,
-.project-card:focus-visible {
+/* Stretched-link pattern: the card itself is a plain <div> (not an <a>) so
+   that a genuinely separate, independently-clickable link — e.g. the
+   GitHub badge — can sit inside it without illegally nesting <a> in <a>.
+   This invisible anchor covers the whole card and carries the real
+   navigation; z-index keeps it below any other real link in the card. */
+.project-card__stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.project-card:has(.project-card__stretched-link:hover),
+.project-card:has(.project-card__stretched-link:focus-visible) {
   transform: translateY(-6px);
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
   box-shadow: var(--shadow-md);
@@ -142,8 +153,8 @@
   transition: transform var(--duration-base) var(--ease-standard);
 }
 
-.project-card:hover .project-card__cta svg,
-.project-card:focus-visible .project-card__cta svg {
+.project-card:has(.project-card__stretched-link:hover) .project-card__cta svg,
+.project-card:has(.project-card__stretched-link:focus-visible) .project-card__cta svg {
   transform: translateX(4px);
 }
 
@@ -157,8 +168,8 @@
 .project-grid .project-card:nth-child(3) { --reveal-delay: 160ms; }
 
 @media (prefers-reduced-motion: reduce) {
-  .project-card:hover,
-  .project-card:focus-visible {
+  .project-card:has(.project-card__stretched-link:hover),
+  .project-card:has(.project-card__stretched-link:focus-visible) {
     transform: none;
   }
 }
@@ -166,3 +177,23 @@
 @media (max-width: 30rem) {
   .hub-hero h1 { max-width: none; }
 }
+
+/* ---------- source-link badge ----------
+   A .badge rendered as an <a>, for linking out to a project's real GitHub
+   repo. Distinct from the plain informational .badge spans: it gets a
+   hover/focus state so it reads as interactive. */
+.badge--link {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.badge--link:hover,
+.badge--link:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.badge--link svg { flex: none; }
