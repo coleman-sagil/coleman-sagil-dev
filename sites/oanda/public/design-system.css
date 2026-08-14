@@ -83,10 +83,10 @@
 
   /* Suite default accent — a restrained indigo. Any site may override
      this trio in its own style.css; see the header comment above. */
-  --accent: #6e8bf7;
-  --accent-strong: #aebbf5;
-  --accent-soft: rgba(110, 139, 247, 0.18);
-  --on-accent: #0a0b0e;
+  --accent: #be3747;
+  --accent-strong: #e65a69;
+  --accent-soft: rgba(190, 55, 71, 0.18);
+  --on-accent: #ffffff;
 
   /* Semantic status colors */
   --good: #6fc79a;
@@ -118,9 +118,9 @@
     --text-dim: #52565f;
     --text-faint: #82868f;
 
-    --accent: #3d5fd1;
-    --accent-strong: #24408f;
-    --accent-soft: rgba(61, 95, 209, 0.1);
+    --accent: #962c3d;
+    --accent-strong: #772230;
+    --accent-soft: rgba(150, 44, 61, 0.10);
     --on-accent: #ffffff;
 
     --good: #1f7a53;
@@ -148,10 +148,10 @@
   --text: #e8eaef;
   --text-dim: #9aa1b1;
   --text-faint: #666d7d;
-  --accent: #6e8bf7;
-  --accent-strong: #aebbf5;
-  --accent-soft: rgba(110, 139, 247, 0.18);
-  --on-accent: #0a0b0e;
+  --accent: #be3747;
+  --accent-strong: #e65a69;
+  --accent-soft: rgba(190, 55, 71, 0.18);
+  --on-accent: #ffffff;
   --good: #6fc79a;
   --good-soft: rgba(111, 199, 154, 0.16);
   --warn: #e0a458;
@@ -174,9 +174,9 @@
   --text: #1b1d22;
   --text-dim: #52565f;
   --text-faint: #82868f;
-  --accent: #3d5fd1;
-  --accent-strong: #24408f;
-  --accent-soft: rgba(61, 95, 209, 0.1);
+  --accent: #962c3d;
+  --accent-strong: #772230;
+  --accent-soft: rgba(150, 44, 61, 0.10);
   --on-accent: #ffffff;
   --good: #1f7a53;
   --good-soft: rgba(31, 122, 83, 0.1);
