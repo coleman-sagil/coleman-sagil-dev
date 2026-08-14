@@ -11,11 +11,26 @@
 # because adding a `route` makes Wrangler default it to disabled —
 # without this line the original *.workers.dev URL 404s the moment a
 # custom route is attached.
+#
+# Two route patterns, not one: "coleman-sagil.dev/LocalLLM/*" alone
+# does NOT match a request for "/LocalLLM" with no trailing slash
+# (confirmed empirically — the wildcard requires the literal slash
+# before it). Without the exact-match entry below, that no-slash
+# request falls through to the hub's catch-all route and 404s instead
+# of reaching this Worker's own auto-trailing-slash asset handling,
+# which is what actually issues the 307 to "/LocalLLM/".
 
 name = "coleman-sagil-local-llm"
 compatibility_date = "2026-08-01"
-route = "coleman-sagil.dev/LocalLLM/*"
 workers_dev = true
+
+[[routes]]
+pattern = "coleman-sagil.dev/LocalLLM"
+zone_name = "coleman-sagil.dev"
+
+[[routes]]
+pattern = "coleman-sagil.dev/LocalLLM/*"
+zone_name = "coleman-sagil.dev"
 
 [assets]
 directory = "./public"
