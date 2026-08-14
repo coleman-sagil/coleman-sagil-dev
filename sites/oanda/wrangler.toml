@@ -7,12 +7,14 @@
 # Cloudflare's static-assets router does not strip the route's path
 # prefix, so the assets directory below must mirror that path:
 # everything lives under public/OANDA/ rather than at public/'s own
-# root. Still reachable at the original *.workers.dev URL too — a
-# `route` is an additional trigger, not a replacement for it.
+# root. `workers_dev` is explicit below because adding a `route` makes
+# Wrangler default it to disabled — without this line the original
+# *.workers.dev URL 404s the moment a custom route is attached.
 
 name = "coleman-sagil-oanda"
 compatibility_date = "2026-08-01"
 route = "coleman-sagil.dev/OANDA/*"
+workers_dev = true
 
 [assets]
 directory = "./public"
