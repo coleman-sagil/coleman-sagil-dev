@@ -3,22 +3,18 @@
 # a 3-card grid linking out to each project site (local-llm, IntuiMotion,
 # OANDA bot suite).
 #
-# Intended public hostname (later phase, once the coleman-sagil.dev zone is
-# live on Cloudflare and a valid API token/account ID are configured):
-#   coleman-sagil.dev (apex — this is the suite's landing page, not a
-#   subdomain, so it is the one site in this repo meant to serve the root
-#   domain rather than a *.coleman-sagil.dev host)
-#
-# That hostname is not wired up here. Attaching it requires either a
-# Custom Domain (Cloudflare dashboard) or a `routes` entry in this file,
-# both of which need a real, active zone for coleman-sagil.dev on the
-# target Cloudflare account. Adding a `routes` entry now would pass
-# `wrangler deploy --dry-run` (it doesn't resolve zones) but fail on the
-# first real deploy against an account with no such zone, so it is left
-# out until that phase.
+# Public hostname: coleman-sagil.dev (apex) — this is the suite's landing
+# page, served at the domain root. The `route` below is a catch-all; the
+# other three sites' more specific path-prefix routes
+# (coleman-sagil.dev/IntuiMotion/*, /LocalLLM/*, /OANDA/*) win on
+# specificity per Cloudflare's route-matching precedence, so this pattern
+# only ever actually serves the root and any path not owned by one of
+# those three sites. Still reachable at the original *.workers.dev URL
+# too — a `route` is an additional trigger, not a replacement for it.
 
 name = "coleman-sagil-hub"
 compatibility_date = "2026-08-01"
+route = "coleman-sagil.dev/*"
 
 [assets]
 directory = "./public"

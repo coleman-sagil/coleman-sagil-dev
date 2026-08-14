@@ -1,20 +1,18 @@
 # Worker: coleman-sagil-intuimotion
 # Static portfolio page for the "IntuiMotion" project.
 #
-# Intended public hostname (later phase, once the coleman-sagil.dev zone is
-# live on Cloudflare and a valid API token/account ID are configured):
-#   intuimotion.coleman-sagil.dev
-#
-# That hostname is not wired up here. Attaching it requires either a
-# Custom Domain (Cloudflare dashboard) or a `routes` entry in this file,
-# both of which need a real, active zone for coleman-sagil.dev on the
-# target Cloudflare account. Adding a `routes` entry now would pass
-# `wrangler deploy --dry-run` (it doesn't resolve zones) but fail on the
-# first real deploy against an account with no such zone, so it is left
-# out until that phase.
+# Public path: coleman-sagil.dev/IntuiMotion (path-based, not a
+# subdomain — the suite moved to path routing under the apex domain
+# instead of the originally-planned intuimotion.coleman-sagil.dev
+# subdomain scheme). Cloudflare's static-assets router does not strip
+# the route's path prefix, so the assets directory below must mirror
+# that path: everything lives under public/IntuiMotion/ rather than at
+# public/'s own root. Still reachable at the original *.workers.dev URL
+# too — a `route` is an additional trigger, not a replacement for it.
 
 name = "coleman-sagil-intuimotion"
 compatibility_date = "2026-08-01"
+route = "coleman-sagil.dev/IntuiMotion/*"
 
 [assets]
 directory = "./public"
