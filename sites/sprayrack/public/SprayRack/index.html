@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spray Rack Sizing Calculator &mdash; coleman-sagil.dev</title>
+  <meta name="description" content="A live calculator for sizing a spray-rack water-test setup: required flow rate, hose friction loss, elevation head loss, and pump/pressure adequacy, with every formula shown on the page.">
+  <link rel="stylesheet" href="design-system.css">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/">Home</a></li>
+        <li><a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a></li>
+        <li><a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a></li>
+        <li><a href="https://coleman-sagil.dev/OANDA/">OANDA</a></li>
+        <li><a href="https://coleman-sagil.dev/SprayRack/" aria-current="page">SprayRack</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>field calculator &mdash; spray-rack water testing</p>
+      <h1 data-reveal>Spray Rack Sizing Calculator</h1>
+      <p class="hero__lede" data-reveal>
+        Enter the delivery hose, the equipment on the rack, and the water
+        supply at the site, and this page works out whether the supply
+        can actually deliver the flow and pressure every nozzle needs,
+        and roughly what pump it would take if it can't. Every number
+        below updates as you type, and every formula behind it is shown
+        on the page, not hidden in a lookup table.
+      </p>
+
+      <div class="hero__stats">
+        <div class="stat">
+          <span class="stat__value" id="hero-flow">&mdash;</span>
+          <span class="stat__label">Total flow required (GPM)</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="hero-pressure">&mdash;</span>
+          <span class="stat__label">System pressure required (psi)</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="hero-status">&mdash;</span>
+          <span class="stat__label">Supply status</span>
+        </div>
+      </div>
+
+      <div class="callout" data-reveal>
+        This is an engineering estimate built from standard hydraulics
+        formulas (cited inline below), not a substitute for an on-site
+        pressure test or a check by whoever is actually responsible for
+        the water-test rig. Real hose fittings, valves, elevation
+        changes, and manifold losses beyond what's modeled here can all
+        move the true numbers.
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <section id="delivery-line">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Step 1</p>
+        <h2 data-reveal>Delivery line</h2>
+        <p class="section-intro" data-reveal>
+          The hose or pipe carrying water from the site supply to the
+          rack. Its inner diameter and length set how much pressure is
+          lost to friction; the vertical lift sets how much is lost to
+          elevation.
+        </p>
+
+        <div class="field-grid" data-reveal>
+          <div class="field">
+            <label for="hose-diameter">Hose / pipe inner diameter</label>
+            <select id="hose-diameter">
+              <option value="0.5">1/2 in</option>
+              <option value="0.75">3/4 in</option>
+              <option value="1" selected>1 in</option>
+              <option value="custom">Custom&hellip;</option>
+            </select>
+          </div>
+          <div class="field" id="hose-diameter-custom-field" hidden>
+            <label for="hose-diameter-custom">Custom inner diameter (in)</label>
+            <input type="number" id="hose-diameter-custom" min="0.1" step="0.05" value="1">
+          </div>
+          <div class="field">
+            <label for="hose-length">Total hose length (ft)</label>
+            <input type="number" id="hose-length" min="0" step="1" value="100">
+          </div>
+          <div class="field">
+            <label for="elevation-lift">Vertical elevation lift (ft)</label>
+            <input type="number" id="elevation-lift" min="0" step="1" value="10">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="equipment">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Step 2</p>
+        <h2 data-reveal>Equipment on the rack</h2>
+        <p class="section-intro" data-reveal>
+          Add one row per type of equipment on the manifold &mdash;
+          nozzle banks, oscillating wands, whatever's plumbed in. Name
+          each row yourself; there's no fixed list and no limit on how
+          many you add.
+        </p>
+        <p class="note" data-reveal>
+          <strong>Why the minimum required pressure isn't a sum:</strong>
+          equipment sharing one manifold is a parallel hydraulic circuit,
+          not a series one. The manifold only has to clear the single
+          highest per-unit minimum operating pressure among everything
+          connected to it &mdash; adding a second nozzle's minimum
+          pressure on top of the first would overstate what the supply
+          actually needs to deliver. This calculator uses the
+          <strong>maximum</strong> across rows for that figure, and sums
+          only the flow rates, which really do add.
+        </p>
+
+        <div class="table-wrap" data-reveal>
+          <table>
+            <colgroup>
+              <col>
+              <col class="col-narrow">
+              <col class="col-narrow">
+              <col class="col-wide">
+              <col class="col-remove">
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">Equipment</th>
+                <th scope="col">Qty</th>
+                <th scope="col">GPM / unit</th>
+                <th scope="col">Min. psi / unit</th>
+                <th scope="col"><span class="sr-only">Remove</span></th>
+              </tr>
+            </thead>
+            <tbody id="equip-body">
+              <tr class="equip-row">
+                <td><input type="text" class="equip-name" value="Fixed spray nozzle bank" aria-label="Equipment name"></td>
+                <td><input type="number" class="equip-qty" min="0" step="1" value="8" aria-label="Quantity"></td>
+                <td><input type="number" class="equip-gpm" min="0" step="0.1" value="2.5" aria-label="GPM per unit"></td>
+                <td><input type="number" class="equip-psi" min="0" step="1" value="35" aria-label="Minimum operating pressure per unit, psi"></td>
+                <td><button type="button" class="btn-remove-row" aria-label="Remove this row">&times;</button></td>
+              </tr>
+              <tr class="equip-row">
+                <td><input type="text" class="equip-name" value="Oscillating spray wand" aria-label="Equipment name"></td>
+                <td><input type="number" class="equip-qty" min="0" step="1" value="1" aria-label="Quantity"></td>
+                <td><input type="number" class="equip-gpm" min="0" step="0.1" value="6" aria-label="GPM per unit"></td>
+                <td><input type="number" class="equip-psi" min="0" step="1" value="40" aria-label="Minimum operating pressure per unit, psi"></td>
+                <td><button type="button" class="btn-remove-row" aria-label="Remove this row">&times;</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <button type="button" class="btn-add-row" id="add-equip-row">+ Add equipment row</button>
+
+        <template id="equip-row-template">
+          <tr class="equip-row">
+            <td><input type="text" class="equip-name" value="" placeholder="e.g. Test nozzle" aria-label="Equipment name"></td>
+            <td><input type="number" class="equip-qty" min="0" step="1" value="1" aria-label="Quantity"></td>
+            <td><input type="number" class="equip-gpm" min="0" step="0.1" value="0" aria-label="GPM per unit"></td>
+            <td><input type="number" class="equip-psi" min="0" step="1" value="0" aria-label="Minimum operating pressure per unit, psi"></td>
+            <td><button type="button" class="btn-remove-row" aria-label="Remove this row">&times;</button></td>
+          </tr>
+        </template>
+      </div>
+    </section>
+
+    <section id="site-conditions">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Step 3</p>
+        <h2 data-reveal>Site conditions</h2>
+        <p class="section-intro" data-reveal>
+          What's actually available at the hose bib or hydrant, plus an
+          optional inline booster pump if the raw site pressure falls
+          short.
+        </p>
+
+        <div class="field-grid" data-reveal>
+          <div class="field">
+            <label for="site-pressure">Available site water pressure (psi)</label>
+            <input type="number" id="site-pressure" min="0" step="1" value="55">
+          </div>
+          <div class="field">
+            <label for="booster-select">Booster pump</label>
+            <select id="booster-select">
+              <option value="none" selected>None</option>
+              <option value="half">0.5 HP booster (+20 psi)</option>
+              <option value="one">1 HP booster (+40 psi)</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="note" data-reveal>
+          <strong>Where the booster figures come from:</strong> small
+          inline centrifugal booster pumps in the 1/2&ndash;1 HP class
+          typically publish shutoff/low-flow heads in roughly the
+          45&ndash;100 ft range on their pump curves, which is about
+          20&ndash;43 psi (using the psi&nbsp;=&nbsp;ft&nbsp;&divide;&nbsp;2.31
+          conversion below). This tool uses <strong>+20 psi</strong> for
+          the 0.5 HP tier and <strong>+40 psi</strong> for the 1 HP tier
+          as round, representative figures for that class of pump at low
+          flow &mdash; not a lookup from any specific manufacturer's
+          curve. Swap in a real pump curve for anything beyond a rough
+          check.
+        </p>
+      </div>
+    </section>
+
+    <details id="advanced">
+      <summary>
+        <span class="eyebrow" style="display:inline;margin:0;">Advanced</span>
+        <span class="details-title">Hazen-Williams roughness coefficient (C)</span>
+      </summary>
+      <div class="wrap details-body">
+        <p class="section-intro">
+          C describes how smooth the inside of the hose or pipe is
+          &mdash; higher C means less friction for the same flow. 150 is
+          a standard textbook value for new, smooth-wall PVC or rubber
+          spray hose and is the default this calculator uses everywhere
+          above. Older or rougher pipe runs lower; leave it at 150 unless
+          you have a reason to change it.
+        </p>
+        <div class="field field--inline">
+          <label for="hw-c">Hazen-Williams C</label>
+          <input type="number" id="hw-c" min="1" step="1" value="150">
+        </div>
+      </div>
+    </details>
+
+    <section id="results">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Result</p>
+        <h2 data-reveal>Flow, pressure, and pump sizing</h2>
+        <p class="section-intro" data-reveal>
+          Each figure below shows the formula it comes from, with your
+          current inputs plugged in, so nothing here is a black box.
+        </p>
+
+        <div class="result-grid" data-reveal>
+
+          <div class="result-card">
+            <p class="result-label">Total flow required</p>
+            <p class="result-value"><span id="r-flow">&mdash;</span> <span class="unit">GPM</span></p>
+            <p class="result-formula">
+              &Sigma; (quantity &times; GPM per unit), across every equipment row
+            </p>
+            <p class="result-plugged" id="r-flow-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Elevation head loss</p>
+            <p class="result-value"><span id="r-elevation">&mdash;</span> <span class="unit">psi</span></p>
+            <p class="result-formula">
+              0.433 &times; vertical lift (ft) &mdash; 1 ft of water column = 0.433 psi
+            </p>
+            <p class="result-plugged" id="r-elevation-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Friction loss through hose</p>
+            <p class="result-value"><span id="r-friction">&mdash;</span> <span class="unit">psi</span></p>
+            <p class="result-formula">
+              Hazen&ndash;Williams (US customary, psi form):<br>
+              psi<sub>loss</sub> = 4.52 &times; L &times; Q<sup>1.852</sup> &divide; (C<sup>1.852</sup> &times; d<sup>4.8655</sup>)
+            </p>
+            <p class="result-formula result-formula--note">
+              L = hose length (ft), Q = flow (GPM), d = inner diameter
+              (in), C = roughness coefficient. Standard form of the
+              Hazen&ndash;Williams equation used throughout fire-protection
+              and irrigation hydraulics.
+            </p>
+            <p class="result-plugged" id="r-friction-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Min. required equipment pressure</p>
+            <p class="result-value"><span id="r-equip-psi">&mdash;</span> <span class="unit">psi</span></p>
+            <p class="result-formula">
+              MAX(minimum operating psi), across every equipment row &mdash;
+              not a sum. See the note in Step 2.
+            </p>
+            <p class="result-plugged" id="r-equip-psi-plugged"></p>
+          </div>
+
+          <div class="result-card result-card--emphasis">
+            <p class="result-label">Total system pressure required</p>
+            <p class="result-value"><span id="r-total-psi">&mdash;</span> <span class="unit">psi</span></p>
+            <p class="result-formula">
+              Min. equipment pressure + friction loss + elevation head loss
+            </p>
+            <p class="result-plugged" id="r-total-psi-plugged"></p>
+          </div>
+
+        </div>
+
+        <div class="adequacy-panel" data-reveal id="adequacy-panel">
+          <div class="adequacy-panel__status">
+            <span class="badge-status" id="adequacy-badge">&mdash;</span>
+          </div>
+          <p class="adequacy-panel__detail" id="adequacy-detail"></p>
+          <p class="adequacy-panel__formula">
+            Available pressure = site pressure + booster boost, compared
+            against total system pressure required above.
+          </p>
+        </div>
+
+        <h3 data-reveal>Pump sizing verification</h3>
+        <p class="section-intro" data-reveal>
+          If the rack needs its own pump rather than relying on site
+          pressure, here's roughly what that pump has to be rated for to
+          hit the total system pressure required above, at the total
+          flow required above.
+        </p>
+
+        <div class="result-grid" data-reveal>
+
+          <div class="result-card">
+            <p class="result-label">Total head</p>
+            <p class="result-value"><span id="r-head">&mdash;</span> <span class="unit">ft</span></p>
+            <p class="result-formula">
+              Total system pressure required (psi) &times; 2.31 &mdash;
+              the psi-to-feet-of-water conversion (the reciprocal of the
+              0.433 used above; 1 &divide; 0.433 = 2.309&hellip;,
+              conventionally rounded to 2.31 in pump-sizing references).
+            </p>
+            <p class="result-plugged" id="r-head-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Hydraulic horsepower</p>
+            <p class="result-value"><span id="r-hhp">&mdash;</span> <span class="unit">HP</span></p>
+            <p class="result-formula">
+              (Total flow GPM &times; Total head ft) &divide; 3960 &mdash;
+              the standard hydraulic-horsepower formula for water
+              (specific gravity = 1); 3960 = 33,000 ft&middot;lb/min per
+              HP &divide; 8.33 lb/gal.
+            </p>
+            <p class="result-plugged" id="r-hhp-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Estimated brake horsepower</p>
+            <p class="result-value"><span id="r-bhp">&mdash;</span> <span class="unit">HP</span></p>
+            <p class="result-formula">
+              Hydraulic HP &divide; 0.5 &mdash; a rough rule-of-thumb
+              estimate assuming ~50% overall pump efficiency at this flow
+              and head, not a real pump's published efficiency curve.
+            </p>
+            <p class="result-plugged" id="r-bhp-plugged"></p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p class="disclaimer">
+          This calculator is a personal engineering tool built from
+          published hydraulics formulas, provided for planning purposes
+          only. It is not a substitute for an on-site pressure test, a
+          manufacturer's pump curve, or sign-off from whoever is
+          responsible for the actual water-test setup.
+        </p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/">Home</a>
+        <a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a>
+        <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>
+        <a href="https://coleman-sagil.dev/OANDA/">OANDA</a>
+        <a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal project write-ups</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+  <script src="calculator.js"></script>
+
+</body>
+</html>

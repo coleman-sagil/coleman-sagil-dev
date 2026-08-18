@@ -1,42 +1,103 @@
 /* OANDA Bot Suite — case study page.
    Loads shared design-system.css first; this file layers page-specific
-   look on top of those tokens, plus one deliberate identity override:
-   a trading blue accent (in place of the suite-default indigo), carried
-   over from this page's original palette and re-expressed in the
-   design system's three-layer theme pattern so it still resolves
-   correctly once/if a theme toggle sets [data-theme]. */
+   look on top of those tokens, plus three deliberate identity colors,
+   each re-expressed in the design system's three-layer theme pattern so
+   they resolve correctly once/if a theme toggle sets [data-theme]:
+
+     --accent    OANDA-style trading green — this page's primary color,
+                 replacing the suite-default wine. Carries most of the
+                 page: currency-badge codes, the breakeven-curve chart,
+                 hover states, the config-table parameter column.
+     --accent2   The trading blue this page used to run on entirely
+                 before this retheme. Kept as a second, site-scoped
+                 identity hue (same shape as IntuiMotion's own
+                 --accent2) rather than discarded — it colors the
+                 equity-share bar chart and the funnel's middle stage.
+     --accent3   The suite's own default wine/burgundy red
+                 (design-system.css's un-overridden --accent), pulled
+                 back in deliberately as this page's third color. Used
+                 for the funnel's final stage and the account's real
+                 drawdown backstop below — both are about risk.
+
+   See the entry-gate funnel further down for where all three appear
+   together in one diagram. */
 
 :root {
-  --accent: #3987e5;
-  --accent-strong: #86b6ef;
-  --accent-soft: rgba(57, 135, 229, 0.18);
+  --accent: #2fd699;
+  --accent-strong: #7ce8bd;
+  --accent-soft: rgba(47, 214, 153, 0.18);
 
-  /* Fixed three-stage diagram scale for the entry-gate funnel. Kept
-     constant across themes on purpose (see .gate rules below) rather
-     than remapped per-theme, matching how this diagram already worked. */
-  --gate-1: #86b6ef;
+  /* Second identity hue: the trading blue this page used to run on
+     entirely (dark values below match exactly what --accent /
+     --accent-strong used to be, verbatim). Site-scoped only, per
+     design-system.css's rule that only a site's own style.css may add
+     to its color tokens — same shape/precedent as
+     sites/intuimotion/public/IntuiMotion/style.css's own --accent2. */
+  --accent2: #3987e5;
+  --accent2-strong: #86b6ef;
+  --accent2-soft: rgba(57, 135, 229, 0.18);
+
+  /* Third identity hue: the suite's own default wine/burgundy accent
+     (design-system.css's un-overridden --accent trio), pulled back in
+     verbatim as this page's third deliberate color even though
+     --accent above overrides it away as the primary. */
+  --accent3: #be3747;
+  --accent3-strong: #e65a69;
+  --accent3-soft: rgba(190, 55, 71, 0.18);
+
+  /* Fixed three-stage diagram scale for the entry-gate funnel: green
+     (entry confirmed) -> blue (narrowing) -> red (final risk gate).
+     Each stage is the dark-mode base value of its own identity hue
+     above (--accent / --accent2 / --accent3). Kept constant across
+     themes on purpose (see .gate rules below) rather than remapped
+     per-theme, matching how this diagram already worked. */
+  --gate-1: #2fd699;
   --gate-2: #3987e5;
-  --gate-3: #1c5cab;
+  --gate-3: #be3747;
 }
 
 @media (prefers-color-scheme: light) {
   :root:where(:not([data-theme])) {
-    --accent: #2a78d6;
-    --accent-strong: #1c5cab;
-    --accent-soft: rgba(42, 120, 214, 0.10);
+    --accent: #0c7a52;
+    --accent-strong: #0a5c3e;
+    --accent-soft: rgba(12, 122, 82, 0.10);
+
+    --accent2: #2a78d6;
+    --accent2-strong: #1c5cab;
+    --accent2-soft: rgba(42, 120, 214, 0.10);
+
+    --accent3: #962c3d;
+    --accent3-strong: #772230;
+    --accent3-soft: rgba(150, 44, 61, 0.10);
   }
 }
 
 :root[data-theme="dark"] {
-  --accent: #3987e5;
-  --accent-strong: #86b6ef;
-  --accent-soft: rgba(57, 135, 229, 0.18);
+  --accent: #2fd699;
+  --accent-strong: #7ce8bd;
+  --accent-soft: rgba(47, 214, 153, 0.18);
+
+  --accent2: #3987e5;
+  --accent2-strong: #86b6ef;
+  --accent2-soft: rgba(57, 135, 229, 0.18);
+
+  --accent3: #be3747;
+  --accent3-strong: #e65a69;
+  --accent3-soft: rgba(190, 55, 71, 0.18);
 }
 
 :root[data-theme="light"] {
-  --accent: #2a78d6;
-  --accent-strong: #1c5cab;
-  --accent-soft: rgba(42, 120, 214, 0.10);
+  --accent: #0c7a52;
+  --accent-strong: #0a5c3e;
+  --accent-soft: rgba(12, 122, 82, 0.10);
+
+  --accent2: #2a78d6;
+  --accent2-strong: #1c5cab;
+  --accent2-soft: rgba(42, 120, 214, 0.10);
+
+  --accent3: #962c3d;
+  --accent3-strong: #772230;
+  --accent3-soft: rgba(150, 44, 61, 0.10);
 }
 
 /* ---------- hero ---------- */
@@ -247,7 +308,11 @@ section p {
    against the gate's own gate-1/2/3 fill — so the ring color has to be
    chosen for contrast against --bg in both themes, via the same themed
    --accent-strong token used for text emphasis elsewhere on this page
-   (dark: light blue on near-black; light: dark blue on near-white).
+   (dark: mint green on near-black; light: deep green on near-white).
+   This is a single themed ring color for all three gates, not one ring
+   per gate's own hue — a fixed-hue ring (e.g. --gate-1's green) would
+   fail contrast against a light --bg in light mode, which is exactly
+   why this reuses the theme-aware token instead.
    Do not combine this with var(--shadow-sm): in light mode --shadow-sm
    resolves to the bare keyword `none`, and a box-shadow value list
    containing `none` as one of several comma-separated items is invalid
@@ -304,6 +369,14 @@ section p {
 .gate-2 { width: 76%;  max-width: 26rem; background: var(--gate-2); color: #ffffff; }
 .gate-3 { width: 50%;  max-width: 17rem; background: var(--gate-3); color: #ffffff; }
 
+/* .gate-label's shared 0.85 opacity (below) blends white text toward
+   --gate-3's own red fill, landing under 4.5:1 (~4.4:1) — the one
+   contrast case this retheme actually changes, since gate-3 used to be
+   a dark blue where that same blend still cleared AA. Full opacity on
+   just this gate restores ~5.5:1 without touching gate-1/gate-2's
+   labels, which are unaffected by the color swap. */
+.gate-3 .gate-label { opacity: 1; }
+
 .gate-details {
   display: grid;
   gap: var(--space-5);
@@ -358,8 +431,12 @@ section p {
   min-width: 30rem;
 }
 
+/* This bar chart uses --accent2 (blue) rather than --accent (green) so
+   the two SVG charts on this page read as two distinct series at a
+   glance instead of two copies of the same color — breakeven win-rate
+   below stays on the primary green (.curve-line/.curve-marker). */
 .bar-fill {
-  fill: var(--accent);
+  fill: var(--accent2);
   transition: opacity var(--duration-fast) var(--ease-standard);
 }
 
@@ -418,6 +495,26 @@ section p {
 .cap-grid .cap:nth-child(2) { --reveal-delay: 70ms; }
 .cap-grid .cap:nth-child(3) { --reveal-delay: 140ms; }
 .cap-grid .cap:nth-child(4) { --reveal-delay: 210ms; }
+
+/* Daily loss limit (3rd of the 4 cap cards in index.html) is the one
+   account-wide backstop that's actually about a real loss occurring,
+   as opposed to the other three, which are procedural ceilings/guards
+   — so it gets the suite's red/risk identity color as a persistent
+   left-border flag, not just on hover. Targeted structurally (nth-
+   child, matching the --reveal-delay rules directly above) rather than
+   with a class, so it stays page-only CSS; if index.html's cap order
+   ever changes, this needs to move with the "Daily loss limit" <li>.
+   Specificity note: (0,3,0) here beats .cap:hover's border-color
+   shorthand at (0,2,0), so this red left edge survives the hover
+   state below while the other three sides still pick up the hover
+   tint. */
+.cap-grid .cap:nth-child(3) {
+  border-left: 3px solid var(--accent3);
+}
+
+.cap-grid .cap:nth-child(3) h4 {
+  color: var(--accent3-strong);
+}
 
 .cap {
   margin: 0;

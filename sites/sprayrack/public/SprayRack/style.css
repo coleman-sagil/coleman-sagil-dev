@@ -1,0 +1,573 @@
+/* Spray Rack Sizing Calculator — site-specific styles, built on shared
+   design-system.css tokens (linked before this file). This file
+   intentionally does NOT redeclare neutrals, type, spacing, radius,
+   motion, or base-layer rules (box-sizing, body, code, .wrap,
+   scroll-behavior) — those live once in design-system.css so every site
+   in the suite stays visually identical except for accent color and
+   page-specific components.
+
+   This is the suite's first genuinely interactive page (a live
+   calculator, not a write-up), so it also defines a small set of form
+   components — .field, .table-wrap's editable variant, .result-card,
+   .badge-status — that don't exist anywhere else yet. They're built
+   from the exact same primitives (var(--bg-card), var(--border),
+   var(--radius-md), var(--shadow-sm)) the other three sites already use
+   for cards/tables, so they read as the same visual language, not a
+   parallel one. */
+
+/* ---------- accent override: SprayRack identity color (baby blue) ----------
+   Same three-layer pattern as design-system.css's own color block; see
+   the header comment there for why the :where() guard matters. A soft,
+   pale sky-blue — distinct in hue from both OANDA's blue/green pairing
+   and IntuiMotion's teal. Dark-mode values are the pastel, low-contrast
+   end of the family (readable resting on the near-black page
+   background); light-mode values are pulled noticeably darker/more
+   saturated than the dark-mode pastel, matching how every other site in
+   this suite handles the swap (--accent-strong is the lighter of the
+   pair in dark mode, the darker one in light mode) — a literal pastel
+   baby-blue in light mode would fail text-contrast where --accent-strong
+   is used as body/link color. */
+
+:root {
+  --accent: #8ecdf0;
+  --accent-strong: #c3e8fb;
+  --accent-soft: rgba(142, 205, 240, 0.2);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) {
+    --accent: #1b7aa8;
+    --accent-strong: #125e82;
+    --accent-soft: rgba(27, 122, 168, 0.10);
+  }
+}
+
+:root[data-theme="dark"] {
+  --accent: #8ecdf0;
+  --accent-strong: #c3e8fb;
+  --accent-soft: rgba(142, 205, 240, 0.2);
+}
+
+:root[data-theme="light"] {
+  --accent: #1b7aa8;
+  --accent-strong: #125e82;
+  --accent-soft: rgba(27, 122, 168, 0.10);
+}
+
+/* Links inside page prose only — scoped to `main` so it can't override
+   .site-nav__links / .site-footer__links, which set their own color and
+   text-decoration in design-system.css. Matches IntuiMotion's pattern. */
+main a {
+  color: var(--accent-strong);
+  text-decoration-color: var(--accent-soft);
+  text-underline-offset: 0.15em;
+}
+main a:hover { text-decoration-color: currentColor; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- hero ---------- */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  padding: var(--space-section) 0 var(--space-16);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -18rem;
+  left: 50%;
+  width: 56rem;
+  height: 34rem;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, var(--accent-soft), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-faint);
+  margin: 0 0 var(--space-4);
+}
+
+.hero h1 {
+  font-size: var(--text-5xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tightest);
+  font-weight: 600;
+  margin: 0 0 var(--space-6);
+}
+
+.hero__lede {
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  color: var(--text-dim);
+  max-width: 42rem;
+  margin: 0 0 var(--space-8);
+}
+
+/* Live-updating stats, styled after OANDA's structural-count hero
+   stats, but these three genuinely change as the visitor types. */
+.hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0 0 var(--space-8);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.stat__value {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.stat__label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-faint);
+}
+
+.callout {
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  max-width: 42rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---------- sections ---------- */
+
+section {
+  padding: var(--space-section) 0;
+  border-top: 1px solid var(--border);
+}
+section:first-of-type { border-top: none; }
+
+section h2 {
+  font-size: var(--text-3xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tighter);
+  font-weight: 600;
+  margin: 0 0 var(--space-5);
+  max-width: 32ch;
+}
+
+section h3 {
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 600;
+  margin: var(--space-10) 0 var(--space-3);
+}
+
+section p { margin: 0 0 var(--space-4); }
+
+.section-intro {
+  font-size: var(--text-md);
+  color: var(--text-dim);
+  max-width: 42rem;
+  margin: 0 0 var(--space-6);
+}
+
+.note {
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  margin: 0 0 var(--space-6);
+  max-width: 46rem;
+}
+.note:last-child { margin-bottom: 0; }
+.note strong { color: var(--text); }
+
+/* ---------- form fields ----------
+   New component, not present elsewhere in the suite yet (this is its
+   first interactive page): a labeled input/select pair, built from the
+   same card/border/radius primitives every other component here uses.
+   Focus styling is intentionally NOT redeclared — :focus-visible is a
+   global rule in design-system.css and already applies to every input
+   and select on this page without any extra CSS. */
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--space-5);
+  max-width: 46rem;
+  margin: 0 0 var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* .field's own `display: flex` above matches [hidden]'s UA-stylesheet
+   `display: none` in specificity (0,1,0 vs 0,1,0), and author CSS wins
+   ties against the UA stylesheet — so without this rule, toggling the
+   `hidden` attribute on the custom-diameter field (see calculator.js's
+   initDiameterField) would have no visible effect at all. */
+.field[hidden] { display: none; }
+
+.field--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 20rem;
+}
+.field--inline label { flex: none; }
+.field--inline input { flex: 1 1 auto; }
+
+.field label {
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.field input,
+.field select {
+  font: inherit;
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.field input:hover,
+.field select:hover { border-color: var(--border-strong); }
+
+.field input:focus-visible,
+.field select:focus-visible { border-color: var(--accent); }
+
+/* ---------- editable equipment table ----------
+   Same .table-wrap/table shell every other site in the suite already
+   uses (see sites/oanda, sites/intuimotion's own style.css), extended
+   here with input-in-cell styling since this table's rows are editable
+   rather than static data. */
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+table {
+  border-collapse: collapse;
+  /* table-layout: fixed makes column widths depend only on the
+     explicit widths below (plus the unconstrained name column
+     splitting whatever's left), instead of the default auto-layout
+     algorithm's content-based sizing — which, with editable <input>
+     cells, ended up starving the unconstrained name column down to
+     near its minimum content width rather than giving it the
+     remaining space, even though the three numeric columns already
+     had explicit widths. */
+  table-layout: fixed;
+  width: 100%;
+  min-width: 38rem;
+  font-size: var(--text-sm);
+}
+
+th, td {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+thead th {
+  color: var(--text-faint);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  /* No white-space: nowrap here on purpose: with table-layout: fixed
+     below, a column's width is fixed regardless of content, so a long
+     nowrap header (e.g. "GPM / unit") would simply overflow its column
+     and get clipped by .table-wrap's overflow-x instead of wrapping to
+     a second line the way it safely can. */
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+/* Column widths live on <col> (see the <colgroup> in index.html), not
+   on td:nth-child — with table-layout: fixed, a column's width comes
+   from its <col> element (or, absent one, the first row's cells) and
+   NOT from later rows, so a width rule targeting tbody td here would
+   silently do nothing. The unconstrained first column (Equipment name)
+   gets whatever space is left over. */
+.col-narrow { width: 6.5rem; }
+.col-wide { width: 8rem; }
+/* 4.5rem, not the button's own ~1.9rem: the cell also carries this
+   table's normal td padding (var(--space-3) var(--space-4), 1rem/side),
+   so a column sized to just the button's width clips it against
+   .table-wrap's overflow-x instead of leaving it visible. */
+.col-remove { width: 4.5rem; }
+
+.equip-row input {
+  width: 100%;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+.equip-row input:hover { border-color: var(--border-strong); }
+.equip-row input:focus-visible { border-color: var(--accent); }
+.equip-row .equip-qty,
+.equip-row .equip-gpm,
+.equip-row .equip-psi { font-variant-numeric: tabular-nums; }
+
+.btn-remove-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--text-faint);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+}
+.btn-remove-row:hover {
+  color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 45%, var(--border));
+  background: var(--bad-soft);
+}
+
+.btn-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+}
+.btn-add-row:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 70%, var(--accent) 15%);
+}
+
+/* ---------- advanced (details/summary) ---------- */
+
+#advanced {
+  border-top: 1px solid var(--border);
+}
+
+#advanced summary {
+  cursor: pointer;
+  padding: var(--space-6) var(--container-padding);
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  list-style: none;
+}
+#advanced summary::-webkit-details-marker { display: none; }
+
+#advanced summary::before {
+  content: "▸";
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+  transition: transform var(--duration-fast) var(--ease-standard);
+  order: -1;
+}
+#advanced[open] summary::before { transform: rotate(90deg); }
+
+.details-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.details-body {
+  padding-bottom: var(--space-8);
+}
+
+/* ---------- results ---------- */
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-5);
+  margin: var(--space-2) 0 var(--space-8);
+}
+
+.result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.result-card--emphasis {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 0 0 1px var(--accent-soft), var(--shadow-sm);
+}
+
+.result-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-faint);
+  margin: 0 0 var(--space-2);
+}
+
+.result-value {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 var(--space-3);
+}
+.result-value .unit {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.result-formula {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  color: var(--text-dim);
+  margin: 0 0 var(--space-2);
+}
+.result-formula--note {
+  font-family: var(--font-sans);
+  color: var(--text-faint);
+}
+
+.result-plugged {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent-strong);
+  background: var(--code-bg);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+/* ---------- pass / insufficient adequacy panel ----------
+   Status colors come from the shared semantic --good/--bad tokens, not
+   this page's own accent — a pass/fail state should read the same way
+   every reader of any site in this suite already expects. */
+
+.adequacy-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  padding: var(--space-6);
+  margin: 0 0 var(--space-10);
+  box-shadow: var(--shadow-sm);
+}
+
+.adequacy-panel__status { margin: 0 0 var(--space-4); }
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: var(--text-md);
+  font-weight: 600;
+  padding: 0.4em 1em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+}
+.badge-status.is-good {
+  color: var(--good);
+  background: var(--good-soft);
+  border-color: color-mix(in srgb, var(--good) 40%, var(--border));
+}
+.badge-status.is-bad {
+  color: var(--bad);
+  background: var(--bad-soft);
+  border-color: color-mix(in srgb, var(--bad) 40%, var(--border));
+}
+
+.adequacy-panel__detail {
+  color: var(--text);
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-3);
+  max-width: 42rem;
+}
+
+.adequacy-panel__formula {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  margin: 0;
+}
+
+/* ---------- footer notice ---------- */
+
+.site-footer__notice .disclaimer {
+  margin: 0;
+}
+
+@media (max-width: 30rem) {
+  .hero h1 { font-size: var(--text-4xl); }
+  .hero__stats { gap: var(--space-6); }
+  .field-grid { grid-template-columns: 1fr; }
+}
