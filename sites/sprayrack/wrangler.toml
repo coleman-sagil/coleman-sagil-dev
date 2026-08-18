@@ -1,0 +1,37 @@
+# Worker: coleman-sagil-sprayrack
+# Static portfolio page for the "spray-rack water-test sizing calculator"
+# project.
+#
+# Public path: coleman-sagil.dev/SprayRack (path-based, not a subdomain —
+# the suite moved to path routing under the apex domain instead of the
+# originally-planned sprayrack.coleman-sagil.dev subdomain scheme).
+# Cloudflare's static-assets router does not strip the route's path
+# prefix, so the assets directory below must mirror that path:
+# everything lives under public/SprayRack/ rather than at public/'s own
+# root. `workers_dev` is explicit below because adding a `route` makes
+# Wrangler default it to disabled — without this line the original
+# *.workers.dev URL 404s the moment a custom route is attached.
+#
+# Two route patterns, not one: "coleman-sagil.dev/SprayRack/*" alone does
+# NOT match a request for "/SprayRack" with no trailing slash (confirmed
+# empirically — the wildcard requires the literal slash before it).
+# Without the exact-match entry below, that no-slash request falls
+# through to the hub's catch-all route and 404s instead of reaching
+# this Worker's own auto-trailing-slash asset handling, which is what
+# actually issues the 307 to "/SprayRack/".
+
+name = "coleman-sagil-sprayrack"
+compatibility_date = "2026-08-01"
+workers_dev = true
+
+[[routes]]
+pattern = "coleman-sagil.dev/SprayRack"
+zone_name = "coleman-sagil.dev"
+
+[[routes]]
+pattern = "coleman-sagil.dev/SprayRack/*"
+zone_name = "coleman-sagil.dev"
+
+[assets]
+directory = "./public"
+not_found_handling = "404-page"

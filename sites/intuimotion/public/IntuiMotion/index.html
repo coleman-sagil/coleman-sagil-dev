@@ -430,49 +430,161 @@
       // all: a CSS transition/animation duration override can't stop a
       // requestAnimationFrame loop, so this has to be its own gate.
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      // A pointer-follow glow only means anything with a real, hovering
+      // A pointer-follow trail only means anything with a real, hovering
       // pointer; skip it on touch (the CSS also hides the element on
       // coarse/no-hover input as a backstop if this ever runs anyway).
       if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-      var el = document.querySelector('.cursor-flow');
-      if (!el) return;
+      var container = document.querySelector('.cursor-flow');
+      if (!container) return;
 
-      var targetX = 0, targetY = 0;
-      var x = null, y = null;
+      // Trail tuning. A sample fades to fully transparent LIFETIME_MS
+      // after it's laid down (see frame() below), so a pointer that
+      // stops moving needs no special-cased "stop" handling: its most
+      // recent samples just keep aging on their own until they hit
+      // zero. Samples are laid down on a fixed wall-clock interval
+      // rather than once per requestAnimationFrame tick, so the trail's
+      // density and pool size stay constant across displays instead of
+      // scaling with refresh rate (a 144Hz screen firing pointermove
+      // far more often than a 60Hz one would otherwise burn through the
+      // pool 2-3x faster for no visual gain). POOL_SIZE is sized to the
+      // number of samples alive at once at that rate, plus one slot of
+      // slack: a slot only gets reused once its previous occupant has
+      // had strictly more than LIFETIME_MS to finish fading, so a
+      // reused element is always already invisible (opacity 0) at the
+      // moment it's repositioned, never a visible jump-cut.
+      var LIFETIME_MS = 700;
+      var SAMPLE_INTERVAL_MS = 30;
+      var POOL_SIZE = Math.ceil(LIFETIME_MS / SAMPLE_INTERVAL_MS) + 1;
+      // A second gate alongside the time interval: without it, slow or
+      // near-still hand movement (real pointermove events, just tiny
+      // ones) lays down a dozen-plus samples on almost the same spot.
+      // Since every sample shares one gradient, stacking that many
+      // identical, overlapping circles composites into a hard-edged
+      // solid disc instead of a soft glow — the opposite of "light
+      // trailing the pointer". Requiring real on-screen distance
+      // between samples avoids that without touching the time interval
+      // that fast, continuous motion relies on for a smooth tail.
+      var MIN_DISTANCE_PX = 6;
+      var MIN_DISTANCE_SQ = MIN_DISTANCE_PX * MIN_DISTANCE_PX;
+
+      // A ring buffer of pooled, reused elements rather than a
+      // <canvas>: this page has no other canvas work, so a canvas
+      // overlay would be a whole second rendering model bolted on for
+      // one effect, and it can't read var(--cursor-core) / var(--accent2)
+      // / var(--accent3) directly — it would need
+      // getComputedStyle(document.documentElement) up front *and* a
+      // prefers-color-scheme matchMedia listener to catch a live OS
+      // theme switch mid-session, on top of a separate resize/DPR-aware
+      // canvas sizing path. A few dozen small pooled divs, each
+      // animated with transform/opacity only (compositor-only
+      // properties — no layout, no repaint-triggering geometry), costs
+      // nothing a 60fps canvas clear+redraw wouldn't also cost, and it
+      // keeps this file's plain-DOM, no-dependencies style like the
+      // single-dot version it replaces. (Deliberately no
+      // `will-change` on the pooled dots below: translate3d's 3D-hack
+      // already prompts GPU compositing per element without it, and
+      // pinning POOL_SIZE always-on compositor layers via will-change
+      // would cost more than the one it saved on the old single-dot
+      // version.)
+      var pool = [];
+      for (var i = 0; i < POOL_SIZE; i++) {
+        var dot = document.createElement('div');
+        dot.className = 'cursor-flow__dot';
+        container.appendChild(dot);
+        pool.push({ el: dot, born: -Infinity, x: 0, y: 0 });
+      }
+      var nextSlot = 0;
+      var lastSampleAt = -Infinity;
+      var lastSampleX = 0, lastSampleY = 0;
+      var haveSample = false;
       var running = false;
 
-      function tick() {
-        var dx = targetX - x, dy = targetY - y;
-        if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) {
-          x = targetX;
-          y = targetY;
-          running = false;
-        } else {
-          x += dx * 0.16;
-          y += dy * 0.16;
-          requestAnimationFrame(tick);
+      function layDown(x, y, t) {
+        var s = pool[nextSlot];
+        nextSlot = (nextSlot + 1) % POOL_SIZE;
+        s.born = t;
+        s.x = x;
+        s.y = y;
+      }
+
+      function frame(t) {
+        var anyAlive = false;
+        for (var i = 0; i < POOL_SIZE; i++) {
+          var s = pool[i];
+          var age = t - s.born;
+          if (age >= LIFETIME_MS) {
+            // Already faded out (or never laid down): leave it at
+            // opacity 0 rather than writing to style every frame for a
+            // dead slot, right up until layDown() reuses it.
+            continue;
+          }
+          anyAlive = true;
+          var remaining = 1 - age / LIFETIME_MS;
+          // Squaring the remaining-life fraction front-loads the fade:
+          // a sample loses more than half its opacity in its first
+          // quarter-life and spends the rest of its 700ms as a long,
+          // faint tail, instead of dissolving at a uniform rate. That's
+          // what makes it read as a comet (bright head, thin fading
+          // tail) rather than a row of same-brightness dots.
+          var eased = remaining * remaining;
+          s.el.style.opacity = eased;
+          // Shrinking alongside the fade (scale 1 -> 0.4) reinforces
+          // the same tapering-comet read.
+          var scale = 0.4 + 0.6 * remaining;
+          s.el.style.transform = 'translate3d(' + s.x + 'px,' + s.y + 'px,0) scale(' + scale + ')';
         }
-        el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+        if (anyAlive) {
+          requestAnimationFrame(frame);
+        } else {
+          running = false;
+        }
+      }
+
+      function ensureRunning() {
+        if (!running) {
+          running = true;
+          requestAnimationFrame(frame);
+        }
       }
 
       window.addEventListener('pointermove', function (e) {
-        targetX = e.clientX;
-        targetY = e.clientY;
-        if (x === null) {
-          x = targetX;
-          y = targetY;
-          el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
-        }
-        el.classList.add('is-active');
-        if (!running) {
-          running = true;
-          requestAnimationFrame(tick);
+        var t = performance.now();
+        var dx = e.clientX - lastSampleX, dy = e.clientY - lastSampleY;
+        var farEnough = !haveSample || (dx * dx + dy * dy) >= MIN_DISTANCE_SQ;
+        if (farEnough && (t - lastSampleAt) >= SAMPLE_INTERVAL_MS) {
+          lastSampleAt = t;
+          lastSampleX = e.clientX;
+          lastSampleY = e.clientY;
+          haveSample = true;
+          layDown(e.clientX, e.clientY, t);
+          ensureRunning();
         }
       }, { passive: true });
 
       window.addEventListener('blur', function () {
-        el.classList.remove('is-active');
+        // Force every pooled sample to read as already-expired rather
+        // than let them keep aging naturally for up to 700ms out of
+        // view: -Infinity born makes every age computation on the very
+        // next frame() tick land past LIFETIME_MS, and the direct
+        // opacity write here means nothing stays visible even a single
+        // frame before that tick runs (e.g. if no frame is currently
+        // scheduled at all). Deliberately does NOT touch `running`: an
+        // in-flight frame() call, if one is scheduled, will see
+        // anyAlive === false on its own next tick and clear that flag
+        // itself. Touching it here too would race a pointermove landing
+        // before that callback fires — it would see running === false
+        // and start a second, duplicate loop that never stops, since
+        // both loops would then see samples as alive and keep
+        // rescheduling each other forever. haveSample is reset too, so
+        // the next pointermove after refocus always lays a sample
+        // regardless of how far the pointer is from wherever it was
+        // pre-blur.
+        for (var i = 0; i < POOL_SIZE; i++) {
+          pool[i].born = -Infinity;
+          pool[i].el.style.opacity = 0;
+        }
+        haveSample = false;
       });
     })();
   </script>

@@ -5,72 +5,150 @@
    design-system.css so every site in the suite stays visually identical
    except for accent color and page-specific components. */
 
-/* ---------- accent override: IntuiMotion identity color (teal) ----------
+/* ---------- accent override: IntuiMotion identity color (royal purple) ----------
    Same three-layer pattern as design-system.css's own color block; see
    the header comment there for why the :where() guard matters. */
 
 :root {
-  --accent: #7dd3c0;
-  --accent-strong: #a6e6d8;
-  --accent-soft: rgba(125, 211, 192, 0.2);
+  --accent: #a78bfa;
+  --accent-strong: #c9b6fd;
+  --accent-soft: rgba(167, 139, 250, 0.2);
 }
 
 @media (prefers-color-scheme: light) {
   :root:where(:not([data-theme])) {
-    --accent: #147d6a;
-    --accent-strong: #0f5f51;
-    --accent-soft: rgba(20, 125, 106, 0.1);
+    --accent: #4c2f8c;
+    --accent-strong: #35205f;
+    --accent-soft: rgba(76, 47, 140, 0.1);
   }
 }
 
 :root[data-theme="dark"] {
-  --accent: #7dd3c0;
-  --accent-strong: #a6e6d8;
-  --accent-soft: rgba(125, 211, 192, 0.2);
+  --accent: #a78bfa;
+  --accent-strong: #c9b6fd;
+  --accent-soft: rgba(167, 139, 250, 0.2);
 }
 
 :root[data-theme="light"] {
-  --accent: #147d6a;
-  --accent-strong: #0f5f51;
-  --accent-soft: rgba(20, 125, 106, 0.1);
+  --accent: #4c2f8c;
+  --accent-strong: #35205f;
+  --accent-soft: rgba(76, 47, 140, 0.1);
 }
 
-/* ---------- second identity hue: --accent2 (magenta/violet) ----------
+/* ---------- second identity hue: --accent2 (deep magenta) ----------
    Site-scoped only (per design-system.css's rule: only the --accent*
    trio may be overridden per-site, and only from a site's own
    style.css). This is a second, equally-shaped trio for the same
    purpose: giving THIS page a bit more color energy than a single
    accent allows, for decorative/motion use only. Never used for body
    text, which stays on the shared --text/--text-dim/--text-faint
-   scale from design-system.css. Chosen to sit clearly apart from the
-   suite's semantic --good/--warn/--bad hues and from the default
-   suite indigo, so pairing it with the teal --accent reads as a
-   deliberate two-color identity, not a clash. Same three-layer
-   theme-override shape as --accent above. */
+   scale from design-system.css. Pairing it with the royal-purple
+   --accent above (and the wine --accent3 below) reads as one
+   deliberate warm violet-through-red identity, not a clash, even
+   though it sits close in hue to the suite's semantic --bad and to
+   design-system.css's own default accent (the wine reused verbatim
+   below as --accent3): the separation from semantic meaning here is
+   by usage (decorative/motion only), not by hue distance. Same
+   three-layer theme-override shape as --accent above. */
 :root {
-  --accent2: #e26fe0;
-  --accent2-strong: #f4a8f2;
-  --accent2-soft: rgba(226, 111, 224, 0.22);
+  --accent2: #f050c8;
+  --accent2-strong: #f79bde;
+  --accent2-soft: rgba(240, 80, 200, 0.22);
 }
 
 @media (prefers-color-scheme: light) {
   :root:where(:not([data-theme])) {
-    --accent2: #a4179f;
-    --accent2-strong: #7a0f76;
-    --accent2-soft: rgba(164, 23, 159, 0.1);
+    --accent2: #9c0f70;
+    --accent2-strong: #750b53;
+    --accent2-soft: rgba(156, 15, 112, 0.1);
   }
 }
 
 :root[data-theme="dark"] {
-  --accent2: #e26fe0;
-  --accent2-strong: #f4a8f2;
-  --accent2-soft: rgba(226, 111, 224, 0.22);
+  --accent2: #f050c8;
+  --accent2-strong: #f79bde;
+  --accent2-soft: rgba(240, 80, 200, 0.22);
 }
 
 :root[data-theme="light"] {
-  --accent2: #a4179f;
-  --accent2-strong: #7a0f76;
-  --accent2-soft: rgba(164, 23, 159, 0.1);
+  --accent2: #9c0f70;
+  --accent2-strong: #750b53;
+  --accent2-soft: rgba(156, 15, 112, 0.1);
+}
+
+/* ---------- third identity hue: --accent3 (wine/burgundy) ----------
+   Site-scoped only, same shape and same design-system.css exception
+   as --accent2 above. Not a new color: this is shared/design-system.
+   css's own suite-default accent (a deep wine/burgundy — see the
+   color-block comment there) brought back in deliberately as this
+   page's third hue, values reused verbatim rather than invented
+   fresh. Rounds the royal-purple / deep-magenta pair out into a warm
+   three-color identity that stays in one family (violet through
+   magenta through red) instead of reaching for an unrelated hue. It
+   sits close in hue to the suite's semantic --bad, same caveat as
+   --accent2 above — the separation from semantic meaning is by usage
+   (decorative/motion only, e.g. the hero-flow wash below), never a
+   status indicator. Never used for body copy. Same three-layer
+   theme-override shape as above. */
+:root {
+  --accent3: #be3747;
+  --accent3-strong: #e65a69;
+  --accent3-soft: rgba(190, 55, 71, 0.18);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) {
+    --accent3: #962c3d;
+    --accent3-strong: #772230;
+    --accent3-soft: rgba(150, 44, 61, 0.10);
+  }
+}
+
+:root[data-theme="dark"] {
+  --accent3: #be3747;
+  --accent3-strong: #e65a69;
+  --accent3-soft: rgba(190, 55, 71, 0.18);
+}
+
+:root[data-theme="light"] {
+  --accent3: #962c3d;
+  --accent3-strong: #772230;
+  --accent3-soft: rgba(150, 44, 61, 0.10);
+}
+
+/* ---------- off-white highlight: --tint-highlight ----------
+   A small site-scoped exception alongside the --accent* trio above,
+   not a redeclaration of design-system.css's shared --bg/--text scale
+   (those stay identical across all four sites per design-system.css's
+   own rule). A touch of off-white for decorative highlight use only —
+   e.g. the brightest "core" point of a glow or gradient — never body
+   copy or a background fill. Deliberately the same value in all four
+   blocks below: unlike --accent/--accent2/--accent3, an off-white has
+   no natural "light mode" inversion (a color dark/saturated enough to
+   read against a light background has stopped being off-white). That
+   makes this token dark-mode-effective only — against light mode's
+   near-white --bg (#f7f7f5) and white --bg-card, #f5f1f8 reads as
+   barely-there by design, not a bug. Any decorative use that needs a
+   bright "core" point to still read in light mode (e.g. a glow or
+   trail's brightest point) should fall back to --accent-strong there
+   instead of this token. Still carries the full three-layer shape
+   below for toggle-safety/consistency with every other token here. */
+:root {
+  --tint-highlight: #f5f1f8;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) {
+    --tint-highlight: #f5f1f8;
+  }
+}
+
+:root[data-theme="dark"] {
+  --tint-highlight: #f5f1f8;
+}
+
+:root[data-theme="light"] {
+  --tint-highlight: #f5f1f8;
 }
 
 /* Links inside page prose only — scoped to `main` so it can't override
@@ -108,11 +186,14 @@ header.hero::before {
 
 /* ---------- hero flow (fluid, gesture-like motion) ----------
    The one piece of motion on this page meant to read as "gesture" on
-   sight: a slow-turning two-hue gradient, standing in for the open
-   hand becoming a pointer that the copy describes. Deliberately not
-   filter: blur() — a large blurred layer gets repainted every frame
-   of a 26s rotation, which is wasteful for a documentation page; the
-   soft edge instead comes from a radial-gradient mask, which the
+   sight: a slow-turning gradient cycling through the three identity
+   hues (royal purple, deep magenta, wine), with a brief off-white
+   spark stitching the seam where it wraps back to purple, standing in
+   for the open hand becoming a pointer that the copy describes.
+   Deliberately not filter: blur() — a large blurred layer gets
+   repainted every frame of a 26s rotation, which is wasteful for a
+   documentation page; the soft edge instead comes from a
+   radial-gradient mask, which the
    compositor handles far more cheaply alongside the transform
    animation. Sits behind the static ::before wash above (z-index -2
    vs -1) so both layer together without fighting for the same space.
@@ -130,9 +211,10 @@ header.hero::before {
      be dead weight implying a clip that isn't its job. */
   background: conic-gradient(from 0deg at 50% 50%,
     color-mix(in srgb, var(--accent) 55%, transparent),
-    color-mix(in srgb, var(--accent2) 55%, transparent) 35%,
-    color-mix(in srgb, var(--accent) 55%, transparent) 65%,
-    color-mix(in srgb, var(--accent2) 55%, transparent) 85%,
+    color-mix(in srgb, var(--accent2) 55%, transparent) 33%,
+    color-mix(in srgb, var(--accent3) 55%, transparent) 66%,
+    color-mix(in srgb, var(--accent3) 55%, transparent) 90%,
+    color-mix(in srgb, var(--tint-highlight) 55%, transparent) 95%,
     color-mix(in srgb, var(--accent) 55%, transparent));
   -webkit-mask-image: radial-gradient(closest-side, black 0%, black 45%, transparent 100%);
   mask-image: radial-gradient(closest-side, black 0%, black 45%, transparent 100%);
@@ -142,7 +224,8 @@ header.hero::before {
   animation: hero-flow-drift 26s linear infinite;
 }
 
-/* Dark mode's --accent/--accent2 are pale, so the wash reads gently
+/* Dark mode's --accent/--accent2 are pale (--accent3's wine is the
+   one mid-toned exception), so the wash still reads gently overall
    there at .55 opacity; light mode's are deep, saturated brand colors
    (see the override blocks above), so the same conic-gradient needs a
    somewhat lower element opacity in light mode or it prints as a
@@ -150,8 +233,11 @@ header.hero::before {
    Kept high enough (.42, not lower) that it still reads as real
    color rather than fading into gray haze — this is the page's one
    deliberately vivid, attention-grabbing element, and light mode
-   needs to earn that too, not just dark mode. Same three-layer guard
-   as every other themed value in this file. */
+   needs to earn that too, not just dark mode. (The --tint-highlight
+   spark is dark-mode-effective only — see its token comment above —
+   so in light mode this wash quietly drops back to a two-hue-plus-
+   wine cycle at the seam; that's expected, not a bug.) Same
+   three-layer guard as every other themed value in this file. */
 @media (prefers-color-scheme: light) {
   :root:where(:not([data-theme])) .hero-flow { opacity: .42; }
 }
@@ -222,9 +308,9 @@ h1 {
   flex: none;
 }
 
-/* "Confirmed" mirrors this project's own accent (teal) rather than the
-   suite's generic --good token, so the hero badge row reads as one
-   coherent identity color instead of two different greens. */
+/* "Confirmed" mirrors this project's own accent (royal purple) rather
+   than the suite's generic --good token, so the hero badge row reads
+   as one coherent identity color instead of clashing with green. */
 .dot-live { background: var(--accent); }
 .dot-tested { background: var(--warn); }
 .dot-progress { background: var(--text-faint); }
@@ -562,38 +648,103 @@ td.gesture { color: var(--text); white-space: nowrap; }
 }
 .badge--link svg { flex: none; }
 
-/* ---------- cursor flow (pointer-follow glow) ----------
-   A small glow that eases toward the pointer, standing in for this
-   project's own "an open, still hand becomes a pointer" idea. Fixed,
-   inert (pointer-events: none), and purely decorative — it never
-   intercepts clicks, drags, or scrolling. Driven from the small
-   inline script at the bottom of index.html, which:
-     - checks prefers-reduced-motion before ever starting its
-       requestAnimationFrame loop (never just relies on this CSS), and
-     - only starts on fine-pointer/hover-capable input in the first
-       place, since a trailing cursor glow has no meaning on touch.
-   The (hover: none), (pointer: coarse) rule below is a CSS-only
-   backstop for that same touch case, so the dot can never get stuck
-   rendered at a stale last-tap position. Element starts at opacity 0
-   and only the script's is-active class reveals it, so nothing shows
-   before a real pointer position is known or if JS never runs. */
-.cursor-flow {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 28px;
-  height: 28px;
-  margin: -14px 0 0 -14px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--accent2-soft), transparent 72%);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 80;
-  transition: opacity var(--duration-base) var(--ease-standard);
-  will-change: transform;
+/* ---------- cursor-flow trail: --cursor-core ----------
+   Component-scoped alias, not a new identity hue: at rest this would
+   just be var(--tint-highlight), the suite's bright off-white core
+   color, but that token is dark-mode-effective only (see its own
+   comment above) and reads as nearly invisible against light mode's
+   near-white --bg. --accent-strong is what that comment names as the
+   correct light-mode fallback for exactly this "bright core point of a
+   glow" use, so this alias makes that swap once, here, rather than
+   repeating the theme check everywhere .cursor-flow's gradient below
+   needs it. Same four-block theme shape as every other token in this
+   file. */
+:root { --cursor-core: var(--tint-highlight); }
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) { --cursor-core: var(--accent-strong); }
 }
 
-.cursor-flow.is-active { opacity: 1; }
+:root[data-theme="dark"] { --cursor-core: var(--tint-highlight); }
+:root[data-theme="light"] { --cursor-core: var(--accent-strong); }
+
+/* ---------- cursor flow (pointer-follow trailing light) ----------
+   A short comet tail of glow samples trailing the pointer, standing in
+   for this project's own "an open, still hand becomes a pointer" idea.
+   Used to be a single dot that eased toward the pointer and toggled
+   opacity 0/1; now a fixed pool of POOL_SIZE small elements (sized in
+   the script below, alongside the full DOM-pool-vs-canvas reasoning
+   for why this stayed plain pooled divs), laid down along the
+   pointer's recent path and individually faded out over a 700ms
+   lifetime each. A moving pointer keeps laying fresh samples faster
+   than old ones expire, so it reads as a continuous fading tail; a
+   stopped pointer just lets its last few samples finish that same
+   700ms fade on their own, no separate "idle" state needed anywhere in
+   this file.
+
+   Every sample shares this one gradient, and opacity/transform are
+   written directly per frame from the script as a real numeric fade
+   curve, not a two-state toggle — so unlike the old single dot there's
+   no CSS transition on opacity here. A transition would be racing
+   values already being interpolated every frame in JS instead of
+   helping them.
+
+   Colored core-to-edge (bright --cursor-core center, through magenta,
+   into wine) rather than a flat tint, echoing the hero-flow wash's
+   three-hue treatment elsewhere on this page. Same
+   color-mix(...,55%,transparent) stop treatment and the same .55/.42
+   dark/light element-opacity split as .hero-flow too, and for the same
+   underlying reason: several of these can overlap near the pointer
+   (most visibly when it moves slowly — see MIN_DISTANCE_PX in the
+   script for the other half of that fix), so the same restraint that
+   keeps hero-flow's wash from printing as a stain on a light
+   background keeps a cluster of overlapping trail samples from
+   composing into a solid ink blob there either.
+
+   Fixed, inert (pointer-events: none on the container and every pooled
+   dot), and purely decorative — never intercepts clicks, drags, or
+   scrolling. Every gate from the single-dot version is preserved
+   exactly in the script: prefers-reduced-motion checked before any
+   requestAnimationFrame loop starts, fine-pointer/hover-capable input
+   required before starting at all, and nothing is ever positioned or
+   shown before a real first pointer position is known. The (hover:
+   none), (pointer: coarse) rule below is a CSS-only backstop for the
+   touch case, so nothing can get stuck rendered at a stale last-tap
+   position; a window blur is handled explicitly in the script instead
+   of relying on this CSS (an aged-out sample clears within 700ms
+   regardless, but blur forces every pooled sample to read as
+   already-expired immediately, so nothing lingers mid-fade at a stale
+   position while the window is out of focus). */
+.cursor-flow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  opacity: .55;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) .cursor-flow { opacity: .42; }
+}
+:root[data-theme="light"] .cursor-flow { opacity: .42; }
+:root[data-theme="dark"] .cursor-flow { opacity: .55; }
+
+.cursor-flow__dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--cursor-core) 55%, transparent) 0%,
+    color-mix(in srgb, var(--accent2) 55%, transparent) 38%,
+    color-mix(in srgb, var(--accent3) 55%, transparent) 68%,
+    transparent 80%);
+  opacity: 0;
+  pointer-events: none;
+}
 
 @media (hover: none), (pointer: coarse) {
   .cursor-flow { display: none; }

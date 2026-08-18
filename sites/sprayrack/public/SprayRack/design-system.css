@@ -1,0 +1,561 @@
+/* ==========================================================================
+   coleman-sagil.dev — Shared Design System
+   ==========================================================================
+
+   Design tokens (color, type, space, motion) plus a small base layer and
+   the shared site-nav / site-footer components, for every site in this
+   monorepo (sites/local-llm, sites/intuimotion, sites/oanda, sites/hub).
+
+   HOW TO USE THIS FILE
+   --------------------
+   Cloudflare Workers [assets] only serves files that live inside that
+   site's own public/ directory — there is no cross-site linking and no
+   symlink support in the deployed asset bundle. So this file is not
+   imported from one place: it is COPIED, byte-for-byte, into every site's
+   public/ directory as `public/design-system.css`, and committed there
+   (it is a deploy artifact, not build output — do not gitignore the
+   copies). If this source file changes, re-copy it into all four
+   public/ dirs; there is no build step to do that for you.
+
+   Link it BEFORE the site's own stylesheet, so the site's own rules can
+   layer on top / override:
+
+     <link rel="stylesheet" href="design-system.css">
+     <link rel="stylesheet" href="style.css">
+
+   GIVING EACH SITE ITS OWN IDENTITY COLOR
+   ----------------------------------------
+   Every neutral, spacing, type, radius, and motion token below is meant
+   to be used as-is, unchanged, by every site — that consistency is the
+   point. The one deliberate exception is the --accent* trio. Each site's
+   own style.css may redeclare --accent / --accent-strong / --accent-soft
+   (inside the same :root / prefers-color-scheme / [data-theme] structure
+   used below) to give that project its own accent color while inheriting
+   every other token untouched. Example, in a site's own style.css:
+
+     :root { --accent: #7dd3c0; --accent-strong: #a6e6d8; --accent-soft: #7dd3c033; }
+     @media (prefers-color-scheme: light) {
+       :root:where(:not([data-theme])) { --accent: #147d6a; --accent-strong: #0f5f51; --accent-soft: #147d6a1a; }
+     }
+     :root[data-theme="light"] { --accent: #147d6a; --accent-strong: #0f5f51; --accent-soft: #147d6a1a; }
+
+   THEME OVERRIDE PATTERN (read this before editing any color block)
+   -------------------------------------------------------------------
+   Three layers, in this exact shape, every time a color token is themed:
+
+     1. :root { --token: <dark value>; }                                  (baseline)
+     2. @media (prefers-color-scheme: light) {
+          :root:where(:not([data-theme])) { --token: <light value>; }
+        }
+     3. :root[data-theme="dark"]  { --token: <dark value>; }
+        :root[data-theme="light"] { --token: <light value>; }
+
+   The `:where(:not([data-theme]))` guard on the media-query block is not
+   decorative: :where() zeroes that selector's specificity, so it only
+   ever applies when a `data-theme` attribute is absent from <html>/<body>
+   (i.e. "OS preference, no explicit override yet"). The explicit
+   `[data-theme="dark"|"light"]` rules in layer 3 carry real attribute
+   specificity and always win once something sets that attribute — layer
+   2 can never re-win a fight against layer 3 by loading later in the
+   cascade. None of these four sites ship a theme-toggle control today,
+   but the tokens are wired to be toggle-safe the moment one is added.
+
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. COLOR — neutrals + accent + semantic, dark baseline / light override
+   -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light dark;
+
+  /* Neutral surfaces, darkest to most-raised */
+  --bg: #0a0b0e;
+  --bg-raised: #111319;
+  --bg-card: #15171f;
+  --border: #262a35;
+  --border-strong: #383d4b;
+
+  /* Text, most to least emphasis */
+  --text: #e8eaef;
+  --text-dim: #9aa1b1;
+  --text-faint: #666d7d;
+
+  /* Suite default accent — a deep wine/burgundy. Any site may override
+     this trio in its own style.css; see the header comment above. */
+  --accent: #be3747;
+  --accent-strong: #e65a69;
+  --accent-soft: rgba(190, 55, 71, 0.18);
+  --on-accent: #ffffff;
+
+  /* Semantic status colors */
+  --good: #6fc79a;
+  --good-soft: rgba(111, 199, 154, 0.16);
+  --warn: #e0a458;
+  --warn-soft: rgba(224, 164, 88, 0.16);
+  --bad: #e2718c;
+  --bad-soft: rgba(226, 113, 140, 0.16);
+
+  --code-bg: #0e0f14;
+  --overlay: rgba(5, 6, 8, 0.72);
+
+  /* Elevation. Dark mode reads depth mostly through the border/surface
+     scale above; shadows stay faint and are mostly a light-mode device. */
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow-md: 0 12px 32px -16px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 64px -24px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme])) {
+    --bg: #f7f7f5;
+    --bg-raised: #ffffff;
+    --bg-card: #ffffff;
+    --border: #e3e2dd;
+    --border-strong: #cfcec7;
+
+    --text: #1b1d22;
+    --text-dim: #52565f;
+    --text-faint: #82868f;
+
+    --accent: #962c3d;
+    --accent-strong: #772230;
+    --accent-soft: rgba(150, 44, 61, 0.10);
+    --on-accent: #ffffff;
+
+    --good: #1f7a53;
+    --good-soft: rgba(31, 122, 83, 0.1);
+    --warn: #9a6a20;
+    --warn-soft: rgba(154, 106, 32, 0.1);
+    --bad: #b23a55;
+    --bad-soft: rgba(178, 58, 85, 0.1);
+
+    --code-bg: #eef0ee;
+    --overlay: rgba(20, 20, 18, 0.5);
+
+    --shadow-sm: none;
+    --shadow-md: 0 12px 32px -18px rgba(20, 20, 18, 0.18);
+    --shadow-lg: 0 24px 64px -24px rgba(20, 20, 18, 0.22);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a0b0e;
+  --bg-raised: #111319;
+  --bg-card: #15171f;
+  --border: #262a35;
+  --border-strong: #383d4b;
+  --text: #e8eaef;
+  --text-dim: #9aa1b1;
+  --text-faint: #666d7d;
+  --accent: #be3747;
+  --accent-strong: #e65a69;
+  --accent-soft: rgba(190, 55, 71, 0.18);
+  --on-accent: #ffffff;
+  --good: #6fc79a;
+  --good-soft: rgba(111, 199, 154, 0.16);
+  --warn: #e0a458;
+  --warn-soft: rgba(224, 164, 88, 0.16);
+  --bad: #e2718c;
+  --bad-soft: rgba(226, 113, 140, 0.16);
+  --code-bg: #0e0f14;
+  --overlay: rgba(5, 6, 8, 0.72);
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow-md: 0 12px 32px -16px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 64px -24px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme="light"] {
+  --bg: #f7f7f5;
+  --bg-raised: #ffffff;
+  --bg-card: #ffffff;
+  --border: #e3e2dd;
+  --border-strong: #cfcec7;
+  --text: #1b1d22;
+  --text-dim: #52565f;
+  --text-faint: #82868f;
+  --accent: #962c3d;
+  --accent-strong: #772230;
+  --accent-soft: rgba(150, 44, 61, 0.10);
+  --on-accent: #ffffff;
+  --good: #1f7a53;
+  --good-soft: rgba(31, 122, 83, 0.1);
+  --warn: #9a6a20;
+  --warn-soft: rgba(154, 106, 32, 0.1);
+  --bad: #b23a55;
+  --bad-soft: rgba(178, 58, 85, 0.1);
+  --code-bg: #eef0ee;
+  --overlay: rgba(20, 20, 18, 0.5);
+  --shadow-sm: none;
+  --shadow-md: 0 12px 32px -18px rgba(20, 20, 18, 0.18);
+  --shadow-lg: 0 24px 64px -24px rgba(20, 20, 18, 0.22);
+}
+
+/* --------------------------------------------------------------------------
+   2. TYPE SCALE — system stack, no webfonts (no external requests allowed)
+   -------------------------------------------------------------------------- */
+
+:root {
+  --font-sans: -apple-system, "SF Pro Display", "Segoe UI", system-ui, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* Body / UI sizes — fixed, predictable at any viewport */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-md: 1.125rem;   /* 18px */
+  --text-lg: 1.25rem;    /* 20px */
+  --text-xl: 1.5rem;     /* 24px */
+  --text-2xl: 1.875rem;  /* 30px */
+
+  /* Display sizes — fluid via clamp(), so a hero scales with viewport
+     width instead of jumping at breakpoints */
+  --text-3xl: clamp(2rem, 1.75rem + 1.1vw, 2.5rem);     /* section headings   ~32–40px */
+  --text-4xl: clamp(2.5rem, 2rem + 2.2vw, 3.5rem);      /* sub-hero / feature ~40–56px */
+  --text-5xl: clamp(3rem, 2.1rem + 4vw, 4.75rem);       /* hero               ~48–76px */
+
+  --leading-none: 1;
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-tightest: -0.03em; /* hero / display */
+  --tracking-tighter: -0.02em;  /* h2/h3 */
+  --tracking-tight: -0.01em;    /* body headings */
+  --tracking-normal: 0;
+  --tracking-wide: 0.08em;      /* uppercase eyebrows/labels */
+}
+
+/* --------------------------------------------------------------------------
+   3. SPACING SCALE — 4px base unit
+   -------------------------------------------------------------------------- */
+
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  --space-24: 6rem;    /* 96px */
+  --space-32: 8rem;    /* 128px */
+
+  /* Semantic aliases — the vertical/horizontal rhythm that actually reads
+     as "generous whitespace" instead of an arbitrary number picked once */
+  --space-section: clamp(4rem, 3rem + 5vw, 8rem);
+  --container-padding: clamp(1.25rem, 1rem + 2vw, 2.5rem);
+
+  --max-width-content: 46rem;  /* prose / write-up column */
+  --max-width-wide: 72rem;     /* hub grid, nav, footer */
+  --nav-height: 4rem;
+}
+
+/* --------------------------------------------------------------------------
+   4. RADIUS
+   -------------------------------------------------------------------------- */
+
+:root {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+}
+
+/* --------------------------------------------------------------------------
+   5. MOTION — durations + easing curves
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* ease-standard: a fast-out, gentle-settle curve (Apple/NVIDIA-style
+     "decelerate" motion) — the default for hover states and reveals */
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --duration-instant: 100ms;
+  --duration-fast: 180ms;
+  --duration-base: 280ms;
+  --duration-slow: 480ms;
+  --duration-reveal: 700ms;
+}
+
+/* ==========================================================================
+   6. BASE LAYER — the minimum every site needs, nothing opinionated beyond it
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  -webkit-font-smoothing: antialiased;
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+
+code {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+}
+
+.wrap {
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+}
+
+/* Keyboard focus — one consistent ring everywhere, sites should not
+   redefine this */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Motion kill-switch. This is the only place reduced-motion needs to be
+   handled — every hover/reveal transition below inherits from it. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Scroll-reveal utility
+   --------------------------------------------------------------------------
+   Usage: add `data-reveal` to an element; a small inline script (below)
+   adds `is-visible` when it enters the viewport via IntersectionObserver.
+   To stagger a group (e.g. a card grid settling in sequence), set
+   `--reveal-delay` on individual elements — do NOT add your own
+   `transition-delay` declaration, it will fight the shorthand
+   `transition` below and the outcome depends on selector specificity:
+
+     .my-grid .card:nth-child(2) { --reveal-delay: 80ms; }
+
+   Safety: the hidden state is scoped under `.js` on <html>, added by an
+   early inline script. If JS is off or errors, `.js` is never added, the
+   `.js [data-reveal]` rule never matches, and every element is simply
+   visible by default — a missing script degrades to "no animation," not
+   to a blank page.
+
+   Copy-paste for any site adopting this pattern:
+
+     In <head>, first line inside <body>, or right before </head>:
+       <script>document.documentElement.classList.add('js');</script>
+
+     Right before </body>:
+       <script>
+         (function () {
+           var els = document.querySelectorAll('[data-reveal]');
+           if (!('IntersectionObserver' in window) || !els.length) {
+             els.forEach(function (el) { el.classList.add('is-visible'); });
+             return;
+           }
+           var io = new IntersectionObserver(function (entries) {
+             entries.forEach(function (entry) {
+               if (entry.isIntersecting) {
+                 entry.target.classList.add('is-visible');
+                 io.unobserve(entry.target);
+               }
+             });
+           }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+           els.forEach(function (el) { io.observe(el); });
+         })();
+       </script>
+   -------------------------------------------------------------------------- */
+
+[data-reveal] { --reveal-delay: 0ms; }
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--duration-reveal) var(--ease-standard) var(--reveal-delay),
+              transform var(--duration-reveal) var(--ease-standard) var(--reveal-delay);
+}
+
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   7. SITE NAV — identical markup across all 4 sites, only aria-current
+   moves. See the repo-level design notes for the exact HTML block.
+   ========================================================================== */
+
+.site-nav {
+  /* Uses color-mix() (Safari 16.4+ / Chrome 111+) — acceptable for this
+     suite's audience; if a hard floor on older browsers ever matters,
+     swap for a plain --bg-scrim token with a precomputed rgba value
+     per theme instead. */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-nav__inner {
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.site-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-nav__mark {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: none;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.site-nav__links {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.site-nav__links a {
+  position: relative;
+  display: inline-block;
+  padding: 0.4rem 0.05rem;
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.site-nav__links a:hover { color: var(--text); }
+
+.site-nav__links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.site-nav__links a:hover::after { transform: scaleX(1); }
+
+.site-nav__links a[aria-current="page"] {
+  color: var(--text);
+}
+
+.site-nav__links a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+@media (max-width: 34rem) {
+  .site-nav__inner { flex-wrap: wrap; height: auto; padding-top: 0.9rem; padding-bottom: 0.9rem; }
+  .site-nav__links { gap: var(--space-4); }
+}
+
+/* ==========================================================================
+   8. SITE FOOTER — outer chrome shared across all 4 sites. The
+   `.site-footer__notice` slot holds each page's own existing footer
+   copy/disclaimer unchanged; only the wrapping shell + link row here are
+   new/shared.
+   ========================================================================== */
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-section);
+}
+
+.site-footer__inner {
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: var(--space-12) var(--container-padding) var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.site-footer__notice {
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  max-width: var(--max-width-content);
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border);
+}
+
+.site-footer__links a {
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.site-footer__links a:hover { color: var(--accent-strong); }
+
+.site-footer__meta {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  margin: 0;
+}
