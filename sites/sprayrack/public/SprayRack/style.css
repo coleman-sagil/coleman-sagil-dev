@@ -202,7 +202,15 @@ section p { margin: 0 0 var(--space-4); }
   margin: 0 0 var(--space-6);
 }
 
-.note {
+/* Scoped to `section .note` (not bare `.note`) because Calibration/
+   index.html preserves an unrelated `.cal-doc` form fragment, verbatim,
+   that declares its own bare `.note { font-size: 8.5pt; margin-top: 2pt; }`
+   rule for a print footnote. That fragment's `.note` isn't itself inside
+   a <section> (it lives in a plain <div> on purpose — see that page), so
+   this selector can never reach it; every existing use of class="note"
+   on this page is already inside a <section>, so this scoping is a
+   no-op here. */
+section .note {
   font-size: var(--text-sm);
   color: var(--text-dim);
   background: var(--bg-raised);
@@ -213,8 +221,8 @@ section p { margin: 0 0 var(--space-4); }
   margin: 0 0 var(--space-6);
   max-width: 46rem;
 }
-.note:last-child { margin-bottom: 0; }
-.note strong { color: var(--text); }
+section .note:last-child { margin-bottom: 0; }
+section .note strong { color: var(--text); }
 
 /* ---------- form fields ----------
    New component, not present elsewhere in the suite yet (this is its
@@ -293,7 +301,18 @@ section p { margin: 0 0 var(--space-4); }
   box-shadow: var(--shadow-sm);
 }
 
-table {
+/* All four rules below are scoped to `.table-wrap` (not bare `table`/
+   `th, td`/etc.) for the same reason `.note` is scoped to `section`
+   above: Calibration/index.html preserves a verbatim `.cal-doc` form
+   fragment with its own `<table>`/`<th>`/`<td>` rules sized in pt for
+   print (10.5pt body copy, a 62%-width pressure-log table), and an
+   unscoped `min-width: 38rem` / `font-size` / bare
+   `tbody tr:last-child td { border-bottom: none }` here would leak into
+   it — the last one at higher specificity than `.cal-doc td`'s own
+   border, silently dropping the bottom border off the COMBINED TOTAL
+   row on paper. The only <table> on this page already lives inside
+   .table-wrap (see the markup above), so this scoping is a no-op here. */
+.table-wrap table {
   border-collapse: collapse;
   /* table-layout: fixed makes column widths depend only on the
      explicit widths below (plus the unconstrained name column
@@ -309,14 +328,14 @@ table {
   font-size: var(--text-sm);
 }
 
-th, td {
+.table-wrap th, .table-wrap td {
   text-align: left;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
-thead th {
+.table-wrap thead th {
   color: var(--text-faint);
   font-weight: 600;
   font-size: var(--text-xs);
@@ -329,7 +348,7 @@ thead th {
      a second line the way it safely can. */
 }
 
-tbody tr:last-child td { border-bottom: none; }
+.table-wrap tbody tr:last-child td { border-bottom: none; }
 
 /* Column widths live on <col> (see the <colgroup> in index.html), not
    on td:nth-child — with table-layout: fixed, a column's width comes
@@ -564,6 +583,133 @@ tbody tr:last-child td { border-bottom: none; }
 
 .site-footer__notice .disclaimer {
   margin: 0;
+}
+
+/* ---------- cross-page tool link ----------
+   A visible "the other half of this tool is over here" banner, used on
+   both index.html (pointing at Calibration/) and Calibration/index.html
+   (pointing back). Deliberately a new class rather than reusing .note —
+   .note is scoped to `section .note` above specifically so it can't
+   reach Calibration/index.html's preserved .cal-doc fragment, and this
+   banner needs to live inside .hero, which isn't a <section>. */
+
+.tool-link {
+  display: block;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  max-width: 42rem;
+  box-shadow: var(--shadow-sm);
+  margin: 0 0 var(--space-6);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard);
+}
+.tool-link:hover {
+  border-color: var(--accent);
+  background: var(--bg-raised);
+}
+.tool-link strong { color: var(--accent-strong); }
+
+/* ---------- primary CTA button ----------
+   This page's two existing buttons (.btn-add-row / .btn-remove-row)
+   are both small in-table utilities, not a real page-level call to
+   action, so there's no solid-fill primary button on this page to copy
+   yet. This one is built from the same suite-wide primary-button
+   pattern the design tokens already exist for (--on-accent is defined
+   in design-system.css specifically for text sitting on a solid
+   --accent fill) rather than the standalone calibration artifact's own
+   .print-btn, which is not part of this suite's visual language. */
+
+.btn-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-6);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+}
+.btn-print:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.btn-print svg { width: 18px; height: 18px; flex: none; }
+
+/* ---------- Calibration form page shell ----------
+   Wraps Calibration/index.html's preserved, byte-for-byte .cal-doc
+   fragment (fact-checked ASTM E1105 print form, unrelated bespoke CSS
+   left untouched inside its own <style> tag) in this suite's own card
+   surface instead of the standalone artifact's blueprint-blue chrome.
+   Sized to the form's own 7.6in content width plus breathing room, not
+   the usual .wrap prose column, and given its own overflow-x scroller
+   since the form doesn't reflow at narrow widths any more than a real
+   printed page would. */
+
+.cal-doc-shell {
+  /* .cal-doc itself is a fixed max-width: 7.6in (~730px). This shell's
+     own max-width has to clear that PLUS .cal-doc-sheet's horizontal
+     padding (up to 2 * 2.6rem) PLUS this shell's own horizontal padding
+     (up to 2 * --container-padding, 2 * 2.5rem) — otherwise the form
+     hits .cal-doc-shell's overflow-x scroller at every viewport width,
+     including a full desktop window, instead of only on genuinely
+     narrow screens. */
+  max-width: calc(7.6in + 2 * 2.6rem + 2 * var(--container-padding));
+  margin: var(--space-10) auto var(--space-16);
+  padding: 0 var(--container-padding);
+  overflow-x: auto;
+}
+
+.cal-doc-sheet {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: clamp(1.5rem, 2vw, 2.4rem) clamp(1.4rem, 2.4vw, 2.6rem);
+}
+
+/* Printing Calibration/index.html should show ONLY the .cal-doc form —
+   not this site's nav/hero/tool-link/print-button chrome — the same
+   idea the standalone source page used for its own screen-only chrome,
+   applied to this page's actual chrome elements instead. Everything
+   here is scoped under body.cal-page (set only on Calibration/index.html)
+   so none of it can ever affect printing the calculator page itself. */
+@media print {
+  body.cal-page {
+    background: #fff;
+  }
+  body.cal-page .site-nav,
+  body.cal-page .site-footer,
+  body.cal-page .hero,
+  body.cal-page .tool-link,
+  body.cal-page .btn-print {
+    display: none;
+  }
+  body.cal-page .cal-doc-shell {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  body.cal-page .cal-doc-sheet {
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+  }
 }
 
 @media (max-width: 30rem) {
