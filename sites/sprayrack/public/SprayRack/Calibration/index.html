@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spray Rack Calibration &mdash; coleman-sagil.dev</title>
+  <meta name="description" content="Printable ASTM E1105 water-application rate calibration form for the 4-zone shop spray rack, filled out by hand and re-run every 6 months.">
+  <link rel="stylesheet" href="../design-system.css">
+  <link rel="stylesheet" href="../style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="cal-page">
+
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/">Home</a></li>
+        <li><a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a></li>
+        <li><a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a></li>
+        <li><a href="https://coleman-sagil.dev/OANDA/">OANDA</a></li>
+        <li><a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>ASTM E1105 &mdash; printable form</p>
+      <h1 data-reveal>Spray Rack Calibration</h1>
+      <p class="hero__lede" data-reveal>
+        A one-page calibration record for the shop's 4-zone spray rack.
+        Print it, fill it out by hand while the rack is running, and
+        keep the completed sheet on file &mdash; it isn't something this
+        page can fill in for you. Re-run the full check and print a
+        fresh copy every 6 months, and again before any E1105
+        water-penetration test; the form itself below carries the
+        pass/fail thresholds and the formulas behind them.
+      </p>
+
+      <a class="tool-link" href="https://coleman-sagil.dev/SprayRack/" data-reveal>
+        <strong>Sizing a rack from scratch?</strong> Use the spray rack
+        sizing calculator first to check flow, friction loss, and pump
+        adequacy, then come back here to calibrate it.
+      </a>
+
+      <button class="btn-print" type="button" onclick="window.print()" data-reveal>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Print form
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="cal-doc-shell">
+      <div class="cal-doc-sheet">
+
+<style>
+  .cal-doc { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.3; color: #000; background: #fff; max-width: 7.6in; margin: 0 auto; }
+  .cal-doc * { box-sizing: border-box; }
+  @page { size: letter; margin: 0.45in; }
+  .cal-doc h1 { font-size: 16pt; margin: 0 0 3pt; letter-spacing: 0.2pt; }
+  .cal-doc h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.3pt; border-bottom: 1.5px solid #000; margin: 11pt 0 5pt; padding-bottom: 2pt; }
+  .cal-doc table { width: 100%; border-collapse: collapse; margin-bottom: 4pt; }
+  .cal-doc th, .cal-doc td { border: 1px solid #000; padding: 7pt 5pt; text-align: left; vertical-align: middle; }
+  .cal-doc th { font-size: 9pt; text-transform: uppercase; background: #fff; }
+  .cal-doc td { font-size: 10pt; font-variant-numeric: tabular-nums; }
+  .cal-doc .zonecol { width: 8%; text-align: center; font-weight: bold; }
+  .cal-doc .yncol { width: 11%; text-align: center; }
+  .box { border: 1.5px solid #000; padding: 8pt 10pt; }
+  .chk { display: inline-block; width: 10pt; height: 10pt; border: 1.3px solid #000; margin-right: 5pt; vertical-align: -1.5pt; }
+  .chk-lg { width: 14pt; height: 14pt; vertical-align: -3pt; }
+  .fill { border-bottom: 1px solid #000; display: inline-block; }
+  .hdr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5pt 20pt; margin-bottom: 8pt; font-size: 10.5pt; }
+  .subline { font-size: 9.5pt; margin-bottom: 8pt; }
+  .checklist div { margin-bottom: 5pt; font-size: 10pt; }
+  .note { font-size: 8.5pt; margin-top: 2pt; }
+</style>
+
+<div class="cal-doc">
+
+  <h1>Water-Spray Test Rack &mdash; Calibration Verification</h1>
+  <div class="subline">
+    Verifies this rack meets the ASTM E1105-15 spray-rack water-application rate of <strong>5.0 gal/hr/ft&sup2;</strong>
+    (E1105 / E331 / E547 spray-rack family; six-month recalibration required). This is a different apparatus and
+    method from AAMA 501.2, which is a hand-held single-nozzle field hose test run at 30&ndash;35 psi &mdash; do not
+    cite 501.2 as the basis for this rack's numbers.
+    Rack: 4 zones, 1 ft&sup2; catch area each (4 ft&sup2; total) &rarr; minimum <strong>20 gal/hr combined</strong> to pass.
+    Recalibrate every 6 months and before any E1105 water-penetration test.
+  </div>
+
+  <div class="hdr-grid">
+    <div>Rack ID / Serial: <span class="fill" style="width:65%;">&nbsp;</span></div>
+    <div>Technician: <span class="fill" style="width:65%;">&nbsp;</span></div>
+    <div>Test Date: <span class="fill" style="width:65%;">&nbsp;</span></div>
+    <div>Next Calibration Due (+6 mo): <span class="fill" style="width:50%;">&nbsp;</span></div>
+  </div>
+
+  <h2>Pre-Test Checklist</h2>
+  <div class="checklist">
+    <div><span class="chk"></span>All 4 nozzles inspected &mdash; no clogging, cracking, or mineral buildup</div>
+    <div><span class="chk"></span>Water supply confirmed stable (no fluctuation expected during 15-min run)</div>
+    <div><span class="chk"></span>All 4 catch buckets tared / weighed empty &mdash; recorded in table below</div>
+    <div><span class="chk"></span>Pressure gauge zeroed and functioning; hose connections leak-free</div>
+  </div>
+
+  <h2>Formula Reference &mdash; Follow in Order</h2>
+  <div class="box">
+    <strong>1.</strong> Net water wt (lb) = Bucket + water wt &minus; Empty bucket wt<br>
+    <strong>2.</strong> Volume (gal) = Net water wt (lb) &divide; <strong>8.34</strong> &nbsp;<span style="font-size:9pt;">[lb per U.S. gallon &mdash; standard water density]</span><br>
+    <strong>3.</strong> Flow rate (gal/hr) = Volume (gal) &times; 4 &nbsp;<span style="font-size:9pt;">[15-min run &times; 4 = 60 min/hr]</span><br>
+    <strong>4.</strong> Combined total (gal/hr) = Zone 1 + Zone 2 + Zone 3 + Zone 4<br>
+    <strong>5. PASS only if BOTH:</strong> (a) Combined total &ge; 20 gal/hr, <u>and</u> (b) EACH zone individually falls between 4&ndash;10 gal/hr.<br>
+    &nbsp;&nbsp;&nbsp;If either fails &rarr; clean / inspect / replace nozzles and retest before use on any E1105 test.
+  </div>
+
+  <h2>Zone Data &mdash; Run Duration: 15 min fixed &nbsp;|&nbsp; Target Pressure: 12&ndash;15 psi (this rack's setpoint)</h2>
+  <table>
+    <tr>
+      <th class="zonecol">Zone</th>
+      <th>Empty bucket wt (lb)</th>
+      <th>Bucket + water wt (lb)</th>
+      <th>Net water wt (lb)</th>
+      <th>Volume (gal)</th>
+      <th>Flow rate (gal/hr)</th>
+      <th class="yncol">In 4&ndash;10 range? (Y/N)</th>
+    </tr>
+    <tr><td class="zonecol">1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="zonecol">2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="zonecol">3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="zonecol">4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr>
+      <td colspan="5" style="text-align:right; font-weight:bold;">COMBINED TOTAL (gal/hr):</td>
+      <td style="font-weight:bold;"></td>
+      <td class="yncol" style="font-weight:bold;">&ge;20? &nbsp;Y&nbsp;/&nbsp;N</td>
+    </tr>
+  </table>
+  <div class="note">Each zone's catch area = 1 ft&sup2;, so the Flow rate (gal/hr) column above equals gal/hr/ft&sup2; directly.</div>
+
+  <h2>Pressure Log (process QC &mdash; not the pass/fail metric)</h2>
+  <table style="width: 62%;">
+    <tr><th>Time (min)</th><th>Gauge reading (psi)</th><th>In 12&ndash;15 psi range?</th></tr>
+    <tr><td>0</td><td></td><td style="text-align:center;"><span class="chk"></span></td></tr>
+    <tr><td>5</td><td></td><td style="text-align:center;"><span class="chk"></span></td></tr>
+    <tr><td>10</td><td></td><td style="text-align:center;"><span class="chk"></span></td></tr>
+    <tr><td>15</td><td></td><td style="text-align:center;"><span class="chk"></span></td></tr>
+  </table>
+
+  <h2>Result</h2>
+  <div style="margin-bottom:6pt;">
+    <span class="chk chk-lg"></span><strong>PASS</strong>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <span class="chk chk-lg"></span><strong>FAIL</strong>
+  </div>
+  <div style="margin-bottom:6pt;">Corrective action / notes:</div>
+  <div class="fill" style="width:100%; height:0.5in; margin-bottom:10pt;">&nbsp;</div>
+  <div style="margin-top:16pt;">
+    Technician Signature: <span class="fill" style="width:220px;">&nbsp;</span>
+    &nbsp;&nbsp;&nbsp;&nbsp; Date: <span class="fill" style="width:120px;">&nbsp;</span>
+  </div>
+
+</div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p class="disclaimer">
+          This is a personal calibration record template, provided for
+          shop use, not an official ASTM publication. Verify the
+          standard's current text before relying on this form for any
+          inspection, litigation, or contractual water-test record.
+        </p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/">Home</a>
+        <a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a>
+        <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>
+        <a href="https://coleman-sagil.dev/OANDA/">OANDA</a>
+        <a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal project write-ups</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
