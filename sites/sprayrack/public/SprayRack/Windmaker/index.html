@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Windmaker Pressure-Difference Calculator &mdash; coleman-sagil.dev</title>
+  <meta name="description" content="A live calculator for sizing the air-pressure side of an ASTM E1105 field water test: required blower airflow, Magnehelic gauge target, and test duration, with every formula shown on the page.">
+  <link rel="stylesheet" href="../design-system.css">
+  <link rel="stylesheet" href="../style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="cal-page">
+
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/">Home</a></li>
+        <li><a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a></li>
+        <li><a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a></li>
+        <li><a href="https://coleman-sagil.dev/OANDA/">OANDA</a></li>
+        <li><a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>field calculator &mdash; ASTM E1105 air-pressure side</p>
+      <h1 data-reveal>Windmaker Pressure-Difference Calculator</h1>
+      <p class="hero__lede" data-reveal>
+        Sizes the AIR-pressure side of an ASTM E1105-15(2023) field water
+        test: how many blower units it takes to hold the target static
+        pressure across the chamber, what that pressure reads on a
+        Magnehelic gauge, and for how long to hold it. Meant to be run
+        together with &mdash; not instead of &mdash; the calibrated spray
+        rack. Every number below updates as you type, and every formula
+        behind it is shown on the page.
+      </p>
+
+      <div class="hero__stats">
+        <div class="stat">
+          <span class="stat__value" id="hero-cfm">&mdash;</span>
+          <span class="stat__label">Required blower airflow (CFM)</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="hero-magnehelic">&mdash;</span>
+          <span class="stat__label">Magnehelic gauge target (in. w.c.)</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="hero-status">&mdash;</span>
+          <span class="stat__label">Blower status</span>
+        </div>
+      </div>
+
+      <div class="callout" data-reveal>
+        This is an engineering estimate built from cited standards
+        language and adjacent building-envelope literature (cited inline
+        below), not a substitute for the actual project specification,
+        a manufacturer's blower performance data, or a check by whoever
+        is responsible for the test rig. ASTM E1105 itself does not fix
+        a test pressure &mdash; that's specifier-driven, and this page
+        makes clear where each number on it actually comes from.
+      </div>
+
+      <a class="tool-link" href="https://coleman-sagil.dev/SprayRack/" data-reveal>
+        <strong>Sizing the water side too?</strong> Use the spray rack
+        sizing calculator to check flow, friction loss, and pump
+        adequacy &mdash; a real E1105 run needs both sides holding at
+        once.
+      </a>
+
+      <a class="tool-link" href="https://coleman-sagil.dev/SprayRack/Calibration/" data-reveal>
+        <strong>Already sized the rack?</strong> Print the ASTM E1105
+        calibration form and verify the rack's actual flow rate before
+        the next water-test run.
+      </a>
+    </div>
+  </header>
+
+  <main>
+
+    <section id="specimen" class="calc-section">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Step 1</p>
+        <h2 data-reveal>Specimen</h2>
+        <p class="section-intro" data-reveal>
+          The window, door, or curtain-wall unit under test, and its
+          published air-leakage performance.
+        </p>
+
+        <div class="field-grid" data-reveal>
+          <div class="field">
+            <label for="specimen-width">Specimen width (ft)</label>
+            <input type="number" id="specimen-width" min="0" step="0.1" value="4">
+          </div>
+          <div class="field">
+            <label for="specimen-height">Specimen height (ft)</label>
+            <input type="number" id="specimen-height" min="0" step="0.1" value="6">
+          </div>
+          <div class="field">
+            <label for="leakage-rate">Published air-leakage rate (cfm/ft&sup2;)</label>
+            <input type="number" id="leakage-rate" min="0" step="0.01" placeholder="e.g. 0.30 &mdash; from the NFRC/NAFS label or test report">
+          </div>
+          <div class="field">
+            <label for="leakage-ref">Reference pressure for the rate above</label>
+            <select id="leakage-ref">
+              <option value="75" selected>75 Pa / 1.57 psf &mdash; NFRC 400 / IECC-IRC (most common)</option>
+              <option value="300">300 Pa / 6.24 psf &mdash; NAFS/AAMA structural-test convention</option>
+              <option value="custom">Custom&hellip;</option>
+            </select>
+          </div>
+          <div class="field" id="leakage-ref-custom-field" hidden>
+            <label for="leakage-ref-custom">Custom reference pressure (psf)</label>
+            <input type="number" id="leakage-ref-custom" min="0.01" step="0.01" value="1.57">
+          </div>
+        </div>
+
+        <p class="section-intro" data-reveal>
+          Specimen area: <strong><span id="specimen-area">&mdash;</span> ft&sup2;</strong>
+          (updates as you type).
+        </p>
+
+        <p class="note" data-reveal>
+          <strong>Reference pressure for the rate above:</strong> ASTM E283 is a test
+          <em>method</em> &mdash; its own title is literally &ldquo;...Under Specified
+          Pressure Differences Across the Specimen,&rdquo; meaning E283 itself doesn't fix a
+          pressure. Two different documents that invoke E283 fix two different reference
+          points, and using the wrong one here would over/under-predict required airflow by
+          roughly 4<sup>n</sup> (&asymp;2.5&times; at the default exponent below): NFRC 400 and
+          the IECC/IRC air-leakage code sections test and report against <strong>1.57 psf (75
+          Pa)</strong> &mdash; the default above and what most fenestration labels use &mdash;
+          while some NAFS/AAMA structural testing instead reports at <strong>6.24 psf (300
+          Pa)</strong>. Check which one your specimen's actual label or test report cites, pick
+          the matching option above, or enter a different figure directly via
+          &ldquo;Custom&hellip;&rdquo; if your source cites something else entirely.
+        </p>
+      </div>
+    </section>
+
+    <section id="test-pressure" class="calc-section">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Step 2</p>
+        <h2 data-reveal>Target test pressure &amp; duration</h2>
+        <p class="section-intro" data-reveal>
+          ASTM E1105's own scope leaves the static pressure differential up to whoever
+          specifies the test (&ldquo;...factors should be considered fully prior to specifying
+          the test pressure difference to be used&rdquo;). Derive a starting figure from the
+          window's rated Design Pressure below, or enter a project- or manufacturer-specified
+          pressure directly &mdash; use whichever one the actual governing spec calls for.
+        </p>
+
+        <div class="field-grid" data-reveal>
+          <div class="field">
+            <label for="pressure-path">Test pressure source</label>
+            <select id="pressure-path">
+              <option value="dp" selected>Derive from rated Design Pressure (DP)</option>
+              <option value="direct">Enter test pressure directly</option>
+            </select>
+          </div>
+          <div class="field" id="dp-value-field">
+            <label for="dp-value">Rated Design Pressure, DP (psf)</label>
+            <input type="number" id="dp-value" min="0" step="1" value="50">
+          </div>
+          <div class="field" id="dp-class-field">
+            <label for="dp-class">Performance class</label>
+            <select id="dp-class">
+              <option value="0.15" selected>R / LC / CW &mdash; test at 15% of DP</option>
+              <option value="0.20">AW &mdash; test at 20% of DP</option>
+            </select>
+          </div>
+          <div class="field" id="direct-value-field" hidden>
+            <label for="direct-value">Specified test pressure</label>
+            <input type="number" id="direct-value" min="0" step="0.1" value="0">
+          </div>
+          <div class="field" id="direct-unit-field" hidden>
+            <label for="direct-unit">Unit</label>
+            <select id="direct-unit">
+              <option value="psf" selected>psf</option>
+              <option value="psi">psi</option>
+              <option value="pa">Pa</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="test-duration">Test duration (min)</label>
+            <input type="number" id="test-duration" min="1" step="1" value="15">
+          </div>
+        </div>
+
+        <p class="note" data-reveal>
+          <strong>Where 15% / 20% comes from:</strong> AAMA/WDMA/CSA 101/I.S.2/A440 (NAFS)
+          derives a product's rated <em>lab</em> water-penetration test pressure as 15% of DP
+          for R, LC, and CW performance classes, and 20% of DP for AW class (confirmed
+          independently by FGIA, Construction Specifier, and RDH Building Science). NAFS also
+          sets a class-specific floor and cap at the extremes (roughly 140 Pa at the low end of
+          R class; 580&ndash;720 Pa at the top of AW class) that this simple percentage doesn't
+          model, and these figures shift somewhat between NAFS editions &mdash; treat the
+          DP-derived number as a starting point, not a substitute for a printed water-test
+          pressure on the label when one exists. It's also a <em>lab</em>-rating formula, not
+          automatically the field target: if the governing spec references AAMA 502/503
+          field-test practice, secondary trade sources report the actual field pressure as
+          two-thirds of this lab-rated figure (with its own floor &mdash; 91 Pa / 1.9 psf for
+          AAMA 502, 200 Pa / 4.18 psf for AAMA 503) &mdash; those two floor figures are reported
+          consistently across trade summaries but haven't been independently confirmed against
+          the primary AAMA text here, so verify them against the actual referenced AAMA edition
+          before relying on them. Compute that number yourself and enter it via &ldquo;Enter
+          test pressure directly&rdquo; above rather than stacking it on top of the DP
+          derivation here.
+        </p>
+        <p class="note" data-reveal>
+          <strong>Duration:</strong> ASTM E1105 Procedure A (uniform static pressure) holds the
+          target pressure continuously, with water spray running at the
+          same time, for a minimum of 15 continuous minutes &mdash; the default above.
+          Procedure B (cyclic pressure) instead runs 5-minutes-on / 1-minute-off cycles, with
+          the standard's actual floor being on <em>cumulative</em> pressurized time: total time
+          of pressure application must not be less than 15 minutes (at least 3 cycles), more
+          cycles per project spec. Change the field above if the governing spec calls for
+          something different.
+        </p>
+      </div>
+    </section>
+
+    <section id="blower-sizing" class="calc-section">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Step 3</p>
+        <h2 data-reveal>Blower sizing</h2>
+        <p class="section-intro" data-reveal>
+          The blower(s) have to move air fast enough to both replace what leaks through the
+          specimen at test pressure and make up for the temporary field chamber's own
+          imperfect seal.
+        </p>
+
+        <div class="field-grid" data-reveal>
+          <div class="field">
+            <label for="chamber-margin-cfm">Chamber/seal leakage allowance (CFM)</label>
+            <input type="number" id="chamber-margin-cfm" min="0" step="1" placeholder="measure via a chamber-only pressurization check &mdash; see note">
+          </div>
+          <div class="field">
+            <label for="blower-cfm">Single blower's rated airflow at target static pressure (CFM)</label>
+            <input type="number" id="blower-cfm" min="0" step="10" placeholder="Read off your unit's own spec sheet at this pressure">
+          </div>
+          <div class="field">
+            <label for="blower-units">Blower units in play</label>
+            <select id="blower-units">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="note" data-reveal>
+          <strong>Why this is a direct CFM entry, not a percentage:</strong> no ASTM standard
+          publishes a field-chamber leakage figure, and it isn't a minor add-on to size around
+          &mdash; a temporary chamber sealed to a wall or window opening with tape, sheeting, and
+          duct connections is typically the <strong>larger</strong> of the two leak paths this
+          calculator has to cover, bigger than the specimen's own leakage below it. A percentage
+          of specimen leakage would understate it, sometimes badly, precisely because the two
+          aren't related to each other. The only real way to size this is a pre-test,
+          chamber-only pressurization check: seal the chamber with the specimen opening blocked
+          off (or otherwise isolated), pressurize it alone with nothing else running, and read
+          off how much air it actually takes to hold the target pressure &mdash; enter that
+          figure above. Leaving this blank does not mean zero; it means the required-airflow
+          figure below reflects specimen leakage only and is very likely an underestimate, which
+          the page flags below rather than silently assuming your chamber is perfectly sealed.
+        </p>
+        <p class="note" data-reveal>
+          <strong>No default CFM, on purpose:</strong> this field is intentionally blank.
+          Blower airflow at a given static pressure varies enormously by make, model, and
+          impeller design &mdash; there is no &ldquo;typical&rdquo; number to publish here,
+          only your actual unit's own performance curve at the pressure you're testing at.
+        </p>
+      </div>
+    </section>
+
+    <details id="advanced" class="calc-section">
+      <summary>
+        <span class="eyebrow" style="display:inline;margin:0;">Advanced</span>
+        <span class="details-title">Leakage-scaling exponent (n)</span>
+      </summary>
+      <div class="wrap details-body">
+        <p class="section-intro">
+          Air leakage doesn't scale linearly with pressure; it follows a power law,
+          Q&#8322; = Q&#8321; &times; (P&#8322;&divide;P&#8321;)<sup>n</sup>, with n physically
+          bounded between 0.5 (fully turbulent, orifice-like leakage paths) and 1.0 (fully
+          laminar, crack-like paths). ASTM E779 (whole-building air-leakage testing) derives n
+          <em>empirically</em>, per test, by regression on real multi-point pressure/flow data
+          &mdash; it does not itself specify 0.65. The default below is instead a commonly-cited
+          representative midpoint from adjacent building-envelope/blower-door literature (AIVC
+          Technical Note 44, tracing to LBNL/Sherman research), used only because no
+          per-specimen regression data exists at calculator-build time. Leave it at 0.65 for a
+          rough estimate, or raise it toward 1.0 for gasketed/weatherstripped fenestration
+          (which tends to leak through cracks, not orifices) for a more conservative number
+          &mdash; see the note on the Q&#8322; result card below for why a lower n
+          under-predicts.
+        </p>
+        <div class="field field--inline">
+          <label for="leak-n">Leakage-scaling exponent (n)</label>
+          <input type="number" id="leak-n" min="0.5" max="1" step="0.01" value="0.65">
+        </div>
+      </div>
+    </details>
+
+    <section id="results" class="calc-section">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>Result</p>
+        <h2 data-reveal>Airflow and gauge target</h2>
+        <p class="section-intro" data-reveal>
+          Each figure below shows the formula it comes from, with your current inputs plugged
+          in, so nothing here is a black box.
+        </p>
+
+        <div class="result-grid" data-reveal>
+
+          <div class="result-card">
+            <p class="result-label">Target test pressure</p>
+            <p class="result-value"><span id="r-testpressure">&mdash;</span> <span class="unit">psf</span></p>
+            <p class="result-formula" id="r-testpressure-formula"></p>
+            <p class="result-plugged" id="r-testpressure-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Specimen leakage at reference pressure (Q&#8321;)</p>
+            <p class="result-value"><span id="r-q1">&mdash;</span> <span class="unit">CFM</span></p>
+            <p class="result-formula">
+              Q&#8321; = published rate (cfm/ft&sup2;) &times; specimen area (ft&sup2;), at the
+              reference pressure (P&#8321;) selected in Step 1 &mdash; E283 itself doesn't fix
+              this figure; NFRC 400/IECC-IRC use 75 Pa, NAFS/AAMA use 300 Pa.
+            </p>
+            <p class="result-plugged" id="r-q1-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Required leakage airflow at test pressure (Q&#8322;)</p>
+            <p class="result-value"><span id="r-q2">&mdash;</span> <span class="unit">CFM</span></p>
+            <p class="result-formula">
+              Q&#8322; = Q&#8321; &times; (P&#8322; &divide; P&#8321;)<sup>n</sup>
+            </p>
+            <p class="result-formula result-formula--note">
+              P&#8321; = reference pressure selected in Step 1 (see the Q&#8321; line above),
+              P&#8322; = target test pressure above, n = leakage-scaling exponent (Advanced,
+              default 0.65). A lower n under-predicts required flow &mdash; at roughly a 10:1
+              pressure ratio, n = 0.65 predicts about half the flow that n = 1.0 would.
+            </p>
+            <p class="result-plugged" id="r-q2-plugged"></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Total required airflow, incl. chamber allowance</p>
+            <p class="result-value"><span id="r-required">&mdash;</span> <span class="unit">CFM</span></p>
+            <p class="result-formula">
+              Q&#8322; + chamber/seal leakage allowance (CFM, Step 3) &mdash; additive, since
+              specimen leakage and chamber leakage are two independent paths, not a percentage
+              of each other.
+            </p>
+            <p class="result-plugged" id="r-required-plugged"></p>
+            <p class="result-formula result-formula--note" id="r-required-warning" hidden></p>
+          </div>
+
+          <div class="result-card">
+            <p class="result-label">Total available airflow</p>
+            <p class="result-value"><span id="r-available">&mdash;</span> <span class="unit">CFM</span></p>
+            <p class="result-formula">
+              Blower units &times; per-unit rated CFM &mdash; summed, not maxed: fans working in
+              parallel against one shared pressure add their flows, unlike the equipment
+              -pressure case on the spray rack sizing page. This ignores duct/manifold losses
+              between units.
+            </p>
+            <p class="result-plugged" id="r-available-plugged"></p>
+          </div>
+
+          <div class="result-card result-card--emphasis">
+            <p class="result-label">Magnehelic gauge target</p>
+            <p class="result-value"><span id="r-magnehelic">&mdash;</span> <span class="unit">in. w.c.</span></p>
+            <p class="result-formula">
+              Pa = test pressure (psf) &times; 47.8803; in. w.c. = Pa &divide; 249.089
+            </p>
+            <p class="result-formula result-formula--note">
+              Uses the 4&deg;C (39.2&deg;F, water's max-density point) inch-of-water convention
+              &mdash; the figure most consistently cross-validated across independent
+              references. A 60&deg;F convention gives a value about 0.1% lower &mdash; negligible
+              next to a Magnehelic gauge's own full-scale accuracy, which is &plusmn;2% FS for
+              the 1&ndash;5 in. w.c. ranges typical of this test but drops to &plusmn;3&ndash;4%
+              FS on the smaller sub-1-in. w.c. ranges used for lower-pressure specimens.
+            </p>
+            <p class="result-plugged" id="r-magnehelic-plugged"></p>
+          </div>
+
+        </div>
+
+        <div class="adequacy-panel" data-reveal id="adequacy-panel">
+          <div class="adequacy-panel__status">
+            <span class="badge-status" id="adequacy-badge">&mdash;</span>
+          </div>
+          <p class="adequacy-panel__detail" id="adequacy-detail"></p>
+          <p class="adequacy-panel__formula">
+            Available airflow = blower units &times; rated CFM per unit, compared against total
+            required airflow (leakage scaled to test pressure, plus the chamber/seal leakage
+            allowance) above.
+          </p>
+        </div>
+
+        <div class="callout" data-reveal>
+          Run this together with the spray rack at 5.0 gal/hr/ft&sup2; (see the
+          <a href="https://coleman-sagil.dev/SprayRack/Calibration/">Calibration form</a>) while holding the chamber at the
+          pressure and duration above &mdash; per ASTM E1105-15(2023), the water spray and the
+          static air pressure difference are applied to the specimen simultaneously, not one
+          after the other.
+        </div>
+      </div>
+    </section>
+
+    <section id="field-summary">
+      <div class="wrap" id="field-summary-intro">
+        <p class="eyebrow" data-reveal>Field record</p>
+        <h2 data-reveal>Printable field-summary checklist</h2>
+        <p class="section-intro" data-reveal>
+          A one-page setup record for this test &mdash; print it, fill in the blanks by hand on
+          site, and keep the completed sheet with the water-side calibration record. The
+          pressure and airflow figures below are pulled live from the calculator above, so
+          there's nothing to hand-copy.
+        </p>
+        <button class="btn-print" type="button" onclick="window.print()" data-reveal>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Print checklist
+        </button>
+      </div>
+
+      <div class="cal-doc-shell">
+        <div class="cal-doc-sheet">
+
+<style>
+  .cal-doc { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.3; color: #000; background: #fff; max-width: 7.6in; margin: 0 auto; }
+  .cal-doc * { box-sizing: border-box; }
+  @page { size: letter; margin: 0.45in; }
+  .cal-doc h1 { font-size: 16pt; margin: 0 0 3pt; letter-spacing: 0.2pt; }
+  .cal-doc h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.3pt; border-bottom: 1.5px solid #000; margin: 11pt 0 5pt; padding-bottom: 2pt; }
+  .cal-doc table { width: 100%; border-collapse: collapse; margin-bottom: 4pt; }
+  .cal-doc th, .cal-doc td { border: 1px solid #000; padding: 7pt 5pt; text-align: left; vertical-align: middle; }
+  .cal-doc th { font-size: 9pt; text-transform: uppercase; background: #fff; }
+  .cal-doc td { font-size: 10pt; font-variant-numeric: tabular-nums; }
+  .box { border: 1.5px solid #000; padding: 8pt 10pt; }
+  .chk { display: inline-block; width: 10pt; height: 10pt; border: 1.3px solid #000; margin-right: 5pt; vertical-align: -1.5pt; }
+  .chk-lg { width: 14pt; height: 14pt; vertical-align: -3pt; }
+  .fill { border-bottom: 1px solid #000; display: inline-block; }
+  .hdr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5pt 20pt; margin-bottom: 8pt; font-size: 10.5pt; }
+  .subline { font-size: 9.5pt; margin-bottom: 8pt; }
+  .checklist div { margin-bottom: 5pt; font-size: 10pt; }
+  /* Named .cal-note (not .note) on purpose: style.css scopes a
+     higher-specificity `section .note` card style for this suite's own
+     inline notes, and this print doc lives inside <section
+     id="field-summary"> (unlike Calibration/index.html, where the
+     equivalent fragment sits in a bare <div>, never a <section> —
+     see style.css's own comment on that scoping). A same-named `.note`
+     footnote rule here would lose that specificity fight and pick up a
+     dark card background at 14px on the printed page. */
+  .cal-note { font-size: 8.5pt; margin-top: 2pt; }
+
+  /* This page is a live calculator PLUS a printable summary, unlike
+     Calibration/index.html (which is nothing but the printable form) —
+     so printing needs to hide the interactive Steps 1-3/Advanced/Results
+     sections in addition to the nav/hero/footer that style.css's shared
+     `body.cal-page` print rule already hides. Scoped locally to this
+     page rather than added to style.css since no other page needs it. */
+  @media print {
+    body.cal-page .calc-section { display: none; }
+    body.cal-page #field-summary-intro { display: none; }
+    /* #field-summary is still a <section>, so style.css's bare
+       `section { padding: var(--space-section) 0; border-top: 1px solid
+       var(--border) }` rule still applies in print even though every
+       other section on the page is hidden above — Calibration/index.html
+       never hit this because its cal-doc-shell sits in a bare <div> in
+       <main>, never inside a <section>. Without this reset, the printed
+       sheet gets a stray top border plus ~100px of dead space before the
+       form starts, which can push the signature block onto a second
+       page. */
+    body.cal-page #field-summary { padding: 0; border-top: none; }
+  }
+</style>
+
+<div class="cal-doc">
+
+  <h1>Windmaker Air-Pressure Test &mdash; Field Summary</h1>
+  <div class="subline">
+    Field summary for the air-pressure side of an ASTM E1105-15(2023) water-penetration test,
+    run together with the calibrated spray rack (5.0 gal/hr/ft&sup2; &mdash; see the
+    Calibration form). E1105 does not itself fix the test pressure &mdash; the values below
+    reflect this page's calculator inputs; confirm them against the governing project
+    specification before use.
+  </div>
+
+  <div class="hdr-grid">
+    <div>Specimen ID / Location: <span class="fill" style="width:65%;">&nbsp;</span></div>
+    <div>Technician: <span class="fill" style="width:65%;">&nbsp;</span></div>
+    <div>Test Date: <span class="fill" style="width:65%;">&nbsp;</span></div>
+    <div>Job / Project #: <span class="fill" style="width:50%;">&nbsp;</span></div>
+  </div>
+
+  <h2>Pre-Test Checklist</h2>
+  <div class="checklist">
+    <div><span class="chk"></span>Chamber-only pressurization check run (chamber sealed, specimen opening isolated, nothing else running) to measure the chamber/seal leakage allowance entered below &mdash; see Step 3's note; skipping this leaves that figure at 0, which understates required airflow</div>
+    <div><span class="chk"></span>Chamber fully sealed to the interior face of the specimen &mdash; no gaps at perimeter, frame, or through-penetrations</div>
+    <div><span class="chk"></span>Magnehelic gauge zeroed with both ports open to ambient before connecting; tubing routed without kinks or pinch points</div>
+    <div><span class="chk"></span>Blower count/stationing matches the configuration below (<span id="chk-precheck-units"></span> unit(s), <span id="chk-precheck-cfm"></span> CFM combined available)</div>
+    <div><span class="chk"></span>Spray rack calibration current within the last 6 months &mdash; this site's own recalibration interval (not an ASTM figure), see the Calibration form (coleman-sagil.dev/SprayRack/Calibration/)</div>
+    <div><span class="chk"></span>Target pressure and duration below confirmed against the governing project specification, not assumed from the DP formula alone</div>
+  </div>
+
+  <h2>Formula Reference</h2>
+  <div class="box">
+    <strong>1.</strong> Specimen leakage at reference pressure: Q&#8321; = published rate (cfm/ft&sup2;) &times; specimen area (ft&sup2;), at the reference pressure P&#8321; selected in Step 1 (<span id="chk-refpressure"></span> psf here &mdash; E283 itself doesn't fix this figure; NFRC 400/IECC-IRC use 75 Pa, NAFS/AAMA use 300 Pa).<br>
+    <strong>2.</strong> Leakage scaled to test pressure: Q&#8322; = Q&#8321; &times; (P&#8322; &divide; P&#8321;)<sup>n</sup> &nbsp;<span style="font-size:9pt;">[n = leakage-scaling exponent, see Advanced above]</span><br>
+    <strong>3.</strong> Required airflow = Q&#8322; + chamber/seal leakage allowance (CFM, measured per the checklist above &mdash; additive, not a percentage)<br>
+    <strong>4.</strong> Available airflow = blower units &times; per-unit rated CFM<br>
+    <strong>5.</strong> Magnehelic target (in. w.c.) = (test pressure psf &times; 47.8803 Pa/psf) &divide; 249.089 Pa per in. w.c. (4&deg;C convention)<br>
+    <strong>6. PASS/FAIL below is a field observation</strong> &mdash; whether water penetration was seen at the interior face over the full test duration, at the pressure held &mdash; not something this calculator can compute.
+  </div>
+
+  <h2>Live Calculator Values</h2>
+  <table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Test duration</td><td><span id="chk-duration"></span> min</td></tr>
+    <tr><td>Target test pressure</td><td><span id="chk-pressure-psf"></span> psf &nbsp;/&nbsp; <span id="chk-pressure-psi"></span> psi &nbsp;/&nbsp; <span id="chk-pressure-pa"></span> Pa</td></tr>
+    <tr><td>Magnehelic gauge target</td><td><span id="chk-magnehelic"></span> in. w.c.</td></tr>
+    <tr><td>Leakage reference pressure (P&#8321;, Step 1)</td><td><span id="chk-refpressure2"></span> psf</td></tr>
+    <tr><td>Chamber/seal leakage allowance (entered, Step 3)</td><td><span id="chk-chambercfm"></span> CFM</td></tr>
+    <tr><td>Required airflow (incl. chamber allowance)</td><td><span id="chk-required-cfm"></span> CFM</td></tr>
+    <tr><td>Available airflow (as configured)</td><td><span id="chk-available-cfm"></span> CFM (<span id="chk-units"></span> unit(s) &times; <span id="chk-percfm"></span> CFM each)</td></tr>
+    <tr><td>Minimum blower units needed</td><td><span id="chk-units-needed"></span></td></tr>
+    <tr><td>Blower-sizing verdict (computed above)</td><td><span id="chk-adequacy"></span></td></tr>
+  </table>
+  <div class="cal-note">All figures above update live with the calculator; re-print after changing any input.</div>
+
+  <h2>Result</h2>
+  <div style="margin-bottom:6pt;">
+    <span class="chk chk-lg"></span><strong>PASS</strong>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <span class="chk chk-lg"></span><strong>FAIL</strong>
+  </div>
+  <div style="margin-bottom:6pt;">Corrective action / notes:</div>
+  <div class="fill" style="width:100%; height:0.5in; margin-bottom:10pt;">&nbsp;</div>
+  <div style="margin-top:16pt;">
+    Technician Signature: <span class="fill" style="width:220px;">&nbsp;</span>
+    &nbsp;&nbsp;&nbsp;&nbsp; Date: <span class="fill" style="width:120px;">&nbsp;</span>
+  </div>
+
+</div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p class="disclaimer">
+          This calculator is a personal engineering tool built from cited standards language
+          and adjacent building-envelope literature, provided for planning purposes only. It is
+          not an official ASTM or NAFS publication, and it is not a substitute for the actual
+          project specification, a manufacturer's blower or specimen performance data, or
+          sign-off from whoever is responsible for the actual test.
+        </p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/">Home</a>
+        <a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a>
+        <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>
+        <a href="https://coleman-sagil.dev/OANDA/">OANDA</a>
+        <a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal project write-ups</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+  <script src="windmaker.js"></script>
+
+</body>
+</html>
