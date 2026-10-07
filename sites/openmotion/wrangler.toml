@@ -1,0 +1,26 @@
+# Worker: coleman-sagil-openmotion
+# Static portfolio page for the "OpenMotion" project.
+#
+# Public path: coleman-sagil.dev/OpenMotion (path-based, not a subdomain).
+# Cloudflare's static-assets router does not strip the route's path
+# prefix, so the assets directory below must mirror that path:
+# everything lives under public/OpenMotion/ rather than at public/'s
+# own root. Two route patterns for the same reason as every other site
+# in this suite: the wildcard alone does not match the no-trailing-slash
+# request.
+
+name = "coleman-sagil-openmotion"
+compatibility_date = "2026-08-01"
+workers_dev = true
+
+[[routes]]
+pattern = "coleman-sagil.dev/OpenMotion"
+zone_name = "coleman-sagil.dev"
+
+[[routes]]
+pattern = "coleman-sagil.dev/OpenMotion/*"
+zone_name = "coleman-sagil.dev"
+
+[assets]
+directory = "./public"
+not_found_handling = "404-page"

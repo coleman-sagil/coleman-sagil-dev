@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>IntuiMotion &mdash; coleman-sagil.dev</title>
-  <meta name="description" content="Gesture-driven mouse, macro, and media control for the original Leap Motion Controller, built on Ultraleap's Gemini hand tracking stack.">
+  <meta name="description" content="Gesture-driven mouse, macro, and media control for the original Leap Motion Controller, powered by OpenMotion's open-source Rust USB driver and Mercury hand-tracking engine.">
   <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="style.css">
   <script>document.documentElement.classList.add('js');</script>
@@ -21,6 +21,7 @@
         <li><a href="https://coleman-sagil.dev/">Home</a></li>
         <li><a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a></li>
         <li><a href="https://coleman-sagil.dev/IntuiMotion/" aria-current="page">IntuiMotion</a></li>
+        <li><a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a></li>
         <li><a href="https://coleman-sagil.dev/OANDA/">OANDA</a></li>
         <li><a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a></li>
         <li><a href="https://coleman-sagil.dev/SprayRack/Windmaker/">Windmaker</a></li>
@@ -36,8 +37,9 @@
       <p class="lede" data-reveal>
         Touch-free mouse, macro, and media control for the original Leap
         Motion Controller. An open, still hand becomes a pointer, a pinch
-        becomes a mouse button, and a swipe changes the track, all riding
-        on Ultraleap's Gemini hand tracking stack.
+        becomes a mouse button, and a swipe changes the track&mdash;all
+        powered by <a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a>&rsquo;s
+        open-source Rust USB driver and Mercury hand-tracking engine.
       </p>
       <div class="badges" data-reveal>
         <span class="badge"><span class="dot dot-live"></span>Gesture pipeline: confirmed on live hardware</span>
@@ -62,13 +64,16 @@
           volume, and skips tracks, no touchpad, mouse, or keyboard involved.
         </p>
         <p>
-          Ultraleap's Hand Tracking Service does the actual computer vision,
-          turning raw sensor frames into per-hand skeletal data. IntuiMotion
-          sits above that: it watches the tracked hand for a small vocabulary
-          of deliberate gestures, and maps each one to a mouse action, a
-          media key, or a custom macro (a keystroke combo or a shell
-          command) defined in a plain config file, no code changes needed to
-          add a new one.
+          <a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a>
+          handles everything below the gesture layer: a Rust USB driver
+          brings up the Leap Motion sensor, streams stereo IR frames, and
+          feeds them into Monado&rsquo;s Mercury hand tracker, which turns
+          raw pixels into 21-joint hand skeletons in millimeters.
+          IntuiMotion sits above that: it watches the tracked hand for a
+          small vocabulary of deliberate gestures, and maps each one to a
+          mouse action, a media key, or a custom macro (a keystroke combo
+          or a shell command) defined in a plain config file, no code
+          changes needed to add a new one.
         </p>
         <div class="note" data-reveal>
           <p>
@@ -179,12 +184,12 @@
             <div class="step-desc">the sensor itself</div>
           </li>
           <li data-reveal style="--reveal-delay: 40ms">
-            <div class="step-name">Ultraleap Hand Tracking Service</div>
-            <div class="step-desc">system daemon doing the actual hand tracking</div>
+            <div class="step-name"><a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a> Rust driver</div>
+            <div class="step-desc">USB bring-up, stereo IR streaming at roughly 112&nbsp;fps, device controls</div>
           </li>
           <li data-reveal style="--reveal-delay: 80ms">
-            <div class="step-name">LeapC Python bindings</div>
-            <div class="step-desc"><code>leap.Connection</code> / <code>leap.Listener</code></div>
+            <div class="step-name">Mercury hand tracker (ONNX)</div>
+            <div class="step-desc">Monado&rsquo;s openly-licensed 21-joint skeleton inference, fed by OpenMotion&rsquo;s <code>leap_open</code> driver</div>
           </li>
           <li data-reveal style="--reveal-delay: 120ms">
             <div class="step-name">TrackingListener</div>
@@ -207,11 +212,22 @@
           <p>
             Two things skip that pipeline on purpose. Pointer-mode cursor
             movement is continuous per-frame motion, not a discrete
-            triggered event, so it's wired directly rather than routed
+            triggered event, so it&rsquo;s wired directly rather than routed
             through the dispatcher. Mouse-button press and release work the
             same way, since they need paired press/release calls tied to the
             physical timing of the pinch, not a single fire-and-forget
             action.
+          </p>
+          <p>
+            <strong>OpenMotion replaces the proprietary stack.</strong> The
+            first two pipeline steps above used to be Ultraleap&rsquo;s
+            closed <code>leapd</code> daemon and its Gemini tracking service.
+            <a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a>
+            is the open-source replacement: a Rust USB driver that brings
+            up the hardware directly, paired with Monado&rsquo;s Mercury
+            hand tracker for skeleton inference. Everything from
+            TrackingListener down is the same regardless of which
+            driver layer feeds it.
           </p>
         </div>
       </section>
@@ -400,6 +416,7 @@
         <a href="https://coleman-sagil.dev/">Home</a>
         <a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a>
         <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>
+        <a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a>
         <a href="https://coleman-sagil.dev/OANDA/">OANDA</a>
         <a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a>
         <a href="https://coleman-sagil.dev/SprayRack/Windmaker/">Windmaker</a>
