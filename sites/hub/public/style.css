@@ -172,14 +172,18 @@
   transform: translateX(4px);
 }
 
-/* staggered reveal so the three cards settle in sequence rather than all
-   at once. Sets the --reveal-delay custom property the shared
-   [data-reveal] transition already reads — do not set transition-delay
-   directly here, it would be overwritten by the shared shorthand
-   transition declaration depending on selector specificity. */
+.project-card__cta--muted {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
 .project-grid .project-card:nth-child(1) { --reveal-delay: 0ms; }
 .project-grid .project-card:nth-child(2) { --reveal-delay: 80ms; }
 .project-grid .project-card:nth-child(3) { --reveal-delay: 160ms; }
+.project-grid .project-card:nth-child(4) { --reveal-delay: 0ms; }
+.project-grid .project-card:nth-child(5) { --reveal-delay: 80ms; }
+.project-grid .project-card:nth-child(6) { --reveal-delay: 160ms; }
+.project-grid .project-card:nth-child(7) { --reveal-delay: 0ms; }
 
 @media (prefers-reduced-motion: reduce) {
   .project-card:has(.project-card__stretched-link:hover),

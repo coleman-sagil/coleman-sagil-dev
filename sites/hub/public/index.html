@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>coleman-sagil.dev &mdash; Engineering Projects</title>
-  <meta name="description" content="Personal and work engineering projects: three personal write-ups covering self-hosted LLM inference on an 8GB GPU, gesture control for the Leap Motion Controller, and a 7-bot algorithmic trading suite, plus two live work calculators for spray-rack water testing and ASTM E1105 air-pressure testing.">
+  <meta name="description" content="Personal and work engineering projects: five personal write-ups covering self-hosted LLM inference, gesture control with a custom USB hand-tracking driver, a 7-bot algorithmic trading suite, and report-pipeline automation, plus two live work calculators for spray-rack water testing and ASTM E1105 air-pressure testing.">
   <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="style.css">
   <script>document.documentElement.classList.add('js');</script>
@@ -21,6 +21,7 @@
         <li><a href="https://coleman-sagil.dev/" aria-current="page">Home</a></li>
         <li><a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a></li>
         <li><a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a></li>
+        <li><a href="https://github.com/coleman-sagil/OpenMotion" target="_blank" rel="noopener">OpenMotion</a></li>
         <li><a href="https://coleman-sagil.dev/OANDA/">OANDA</a></li>
         <li><a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a></li>
         <li><a href="https://coleman-sagil.dev/SprayRack/Windmaker/">Windmaker</a></li>
@@ -33,14 +34,16 @@
       <p class="eyebrow" data-reveal>Personal and work engineering, written up in the open</p>
       <h1 data-reveal>Independent systems,<br>built end to end.</h1>
       <p class="hub-hero__lede" data-reveal>
-        Five projects &mdash; self-hosted language model inference,
-        touch-free gesture control, a multi-bot algorithmic trading
-        suite, and two live field-testing calculators built for work
-        &mdash; each documented honestly: what works, what doesn't yet,
-        and how it's actually built.
+        Seven projects &mdash; self-hosted language model inference,
+        a custom USB hand-tracking driver paired with touch-free
+        gesture control, a multi-bot algorithmic trading suite,
+        report-pipeline automation, and two live field-testing
+        calculators built for work &mdash; each documented honestly:
+        what works, what doesn&rsquo;t yet, and how it&rsquo;s
+        actually built.
       </p>
       <p class="hub-hero__note" data-reveal>
-        Three of the projects below are personal write-ups; the other
+        Five of the projects below are personal write-ups; the other
         two, SprayRack and Windmaker, are live work calculators you can
         actually use.
       </p>
@@ -83,10 +86,34 @@
             <p class="project-card__pitch">
               Touch-free mouse, macro, and media control for the original
               Leap Motion Controller. An open, still hand becomes a
-              pointer, a pinch becomes a click, built on Ultraleap's
-              Gemini hand-tracking stack.
+              pointer, a pinch becomes a click &mdash; built hand in hand
+              with OpenMotion&rsquo;s custom USB driver, which replaces
+              the proprietary tracking stack with open Rust/libusb code.
             </p>
             <a class="badge badge--link" href="https://github.com/coleman-sagil/IntuiMotion" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.21c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.09-1.78-.2-3.64-.91-3.64-4.02 0-.89.31-1.62.82-2.19-.08-.2-.36-1.03.08-2.15 0 0 .67-.22 2.2.84a7.4 7.4 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.15.51.57.82 1.29.82 2.19 0 3.12-1.87 3.81-3.65 4.02.29.26.54.76.54 1.53 0 1.11-.01 1.99-.01 2.27 0 .22.15.48.55.4A8.22 8.22 0 0 0 16 8.21C16 3.67 12.42 0 8 0Z"/></svg>
+              GitHub
+            </a>
+            <span class="project-card__cta">
+              View project
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+
+          <div class="project-card" data-reveal>
+            <a class="project-card__stretched-link" href="https://github.com/coleman-sagil/OpenMotion" aria-label="View project: OpenMotion"></a>
+            <div class="project-card__top">
+              <p class="project-card__eyebrow">USB hand-tracking driver</p>
+              <h2>OpenMotion</h2>
+            </div>
+            <p class="project-card__pitch">
+              A from-scratch Rust/libusb driver for the Leap Motion
+              Controller, reverse-engineered from USB captures and Monado
+              Mercury&rsquo;s tracking engine. Replaces the proprietary
+              Ultraleap SDK &mdash; raw USB init, frame capture, and
+              stereo-IR calibration export, all open source.
+            </p>
+            <a class="badge badge--link" href="https://github.com/coleman-sagil/OpenMotion" target="_blank" rel="noopener">
               <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.21c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.09-1.78-.2-3.64-.91-3.64-4.02 0-.89.31-1.62.82-2.19-.08-.2-.36-1.03.08-2.15 0 0 .67-.22 2.2.84a7.4 7.4 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.15.51.57.82 1.29.82 2.19 0 3.12-1.87 3.81-3.65 4.02.29.26.54.76.54 1.53 0 1.11-.01 1.99-.01 2.27 0 .22.15.48.55.4A8.22 8.22 0 0 0 16 8.21C16 3.67 12.42 0 8 0Z"/></svg>
               GitHub
             </a>
@@ -111,6 +138,23 @@
             <span class="project-card__cta">
               View project
               <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+
+          <div class="project-card" data-reveal>
+            <div class="project-card__top">
+              <p class="project-card__eyebrow">Report-pipeline automation</p>
+              <h2>Kearnekey</h2>
+            </div>
+            <p class="project-card__pitch">
+              An automated pipeline for building structured expert
+              reports from raw public records &mdash; permit histories,
+              code-enforcement complaints, and inspection logs. Includes
+              a multi-agent build system, audit verification against
+              source documents, and versioned deliverable tracking.
+            </p>
+            <span class="project-card__cta project-card__cta--muted">
+              Private repository
             </span>
           </div>
 
@@ -165,18 +209,19 @@
       <div class="site-footer__notice">
         <p>
           This is a portfolio of personal and work engineering
-          projects. Three of the project pages here &mdash; Local LLM,
-          IntuiMotion, and OANDA &mdash; are personal write-ups; they
-          expose no live demo, dashboard, or control surface for the
-          systems they describe. The other two, SprayRack and
-          Windmaker, are work projects and real live calculators you
-          can use directly on the page.
+          projects. Five of the project pages here &mdash; Local LLM,
+          IntuiMotion, OpenMotion, OANDA, and Kearnekey &mdash; are
+          personal write-ups; they expose no live demo, dashboard, or
+          control surface for the systems they describe. The other two,
+          SprayRack and Windmaker, are work projects and real live
+          calculators you can use directly on the page.
         </p>
       </div>
       <nav class="site-footer__links" aria-label="Suite">
         <a href="https://coleman-sagil.dev/">Home</a>
         <a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a>
         <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>
+        <a href="https://github.com/coleman-sagil/OpenMotion" target="_blank" rel="noopener">OpenMotion</a>
         <a href="https://coleman-sagil.dev/OANDA/">OANDA</a>
         <a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a>
         <a href="https://coleman-sagil.dev/SprayRack/Windmaker/">Windmaker</a>
