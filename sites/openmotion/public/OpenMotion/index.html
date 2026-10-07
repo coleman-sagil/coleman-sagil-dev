@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenMotion &mdash; coleman-sagil.dev</title>
+  <meta name="description" content="Open-source Rust/libusb driver and hand-tracking stack for the original Leap Motion Controller, reverse-engineered from USB captures. No closed SDK, no dead vendor services.">
+  <link rel="stylesheet" href="design-system.css">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+  <nav class="site-nav" aria-label="Site">
+    <div class="site-nav__inner">
+      <a class="site-nav__brand" href="https://coleman-sagil.dev/">
+        <span class="site-nav__mark" aria-hidden="true"></span>
+        coleman-sagil.dev
+      </a>
+      <ul class="site-nav__links">
+        <li><a href="https://coleman-sagil.dev/">Home</a></li>
+        <li><a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a></li>
+        <li><a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a></li>
+        <li><a href="https://coleman-sagil.dev/OpenMotion/" aria-current="page">OpenMotion</a></li>
+        <li><a href="https://coleman-sagil.dev/OANDA/">OANDA</a></li>
+        <li><a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a></li>
+        <li><a href="https://coleman-sagil.dev/SprayRack/Windmaker/">Windmaker</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-flow" aria-hidden="true"></div>
+    <div class="wrap">
+      <p class="eyebrow" data-reveal>Personal project &mdash; USB driver &amp; hand tracking</p>
+      <h1 data-reveal>OpenMotion</h1>
+      <p class="lede" data-reveal>
+        A fully open-source Rust/libusb driver and hand-tracking stack for
+        the original Leap Motion Controller. No <code>leapd</code>, no closed
+        SDK, no dead vendor services&mdash;just the hardware, reverse-engineered
+        USB control writes, and Monado&rsquo;s openly-licensed Mercury hand
+        tracker.
+      </p>
+      <div class="badges" data-reveal>
+        <span class="badge"><span class="dot dot-live"></span>Device bring-up &amp; streaming: confirmed on real hardware</span>
+        <span class="badge"><span class="dot dot-live"></span>2D + 3D hand tracking: validated (depth matches ruler)</span>
+        <span class="badge"><span class="dot dot-progress"></span>Monado Mercury engine path: in progress</span>
+        <a class="badge badge--link" href="https://github.com/coleman-sagil/OpenMotion" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.21c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.09-1.78-.2-3.64-.91-3.64-4.02 0-.89.31-1.62.82-2.19-.08-.2-.36-1.03.08-2.15 0 0 .67-.22 2.2.84a7.4 7.4 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.15.51.57.82 1.29.82 2.19 0 3.12-1.87 3.81-3.65 4.02.29.26.54.76.54 1.53 0 1.11-.01 1.99-.01 2.27 0 .22.15.48.55.4A8.22 8.22 0 0 0 16 8.21C16 3.67 12.42 0 8 0Z"/></svg>
+          View source on GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+
+      <section id="overview">
+        <h2 data-reveal>What it is</h2>
+        <p class="section-intro" data-reveal>
+          The Leap Motion Controller (USB <code>f182:0003</code>) is a small
+          stereo-IR sensor that shipped in 2013 for hand tracking. Its maker,
+          Ultraleap, abandoned the original hardware: the SDK repository is
+          dead, the tracking service is unmaintained, and the device is
+          otherwise e-waste.
+        </p>
+        <p>
+          OpenMotion replaces the entire proprietary stack. A Rust driver
+          handles USB bring-up and stereo IR streaming, a Python pipeline runs
+          Monado&rsquo;s openly-licensed Mercury ONNX models for 21-joint hand
+          skeletons, and the whole thing feeds gesture input to
+          <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>&mdash;the
+          gesture-control layer that turns tracked hand poses into mouse
+          actions, media keys, and macros.
+        </p>
+        <div class="note" data-reveal>
+          <p>
+            <strong>Named in tribute</strong> to the
+            <a href="https://github.com/openleap/OpenLeap" target="_blank" rel="noopener">2013 OpenLeap initiative</a>,
+            which set out to build an open driver for this hardware and stopped
+            at raw image access. OpenMotion is an independent implementation
+            (no shared code) that completes the mission: device bring-up,
+            calibrated stereo capture, 21-joint hand skeletons, and 3D
+            triangulation in millimeters&mdash;all open.
+          </p>
+        </div>
+      </section>
+
+      <section id="bringup">
+        <h2 data-reveal>Device bring-up</h2>
+        <p class="section-intro" data-reveal>
+          The controller is a UVC-shaped device that does not work with
+          standard UVC drivers&mdash;it boots inert and needs a vendor
+          bring-up sequence. There is no crypto handshake: it just needs the
+          right control writes.
+        </p>
+        <ol class="pipeline">
+          <li data-reveal style="--reveal-delay: 0ms">
+            <div class="step-name">Claim interfaces</div>
+            <div class="step-desc">
+              Detach <code>uvcvideo</code> from interface&nbsp;0
+              (VideoControl, owns the vendor extension units) and
+              interface&nbsp;1 (VideoStreaming, owns bulk IN endpoint
+              <code>0x83</code>)
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 40ms">
+            <div class="step-name">Replay 358 UVC control writes</div>
+            <div class="step-desc">
+              The full bring-up sequence
+              (<code>bringup_seq.txt</code>)&mdash;sensor config, LED driver
+              init, UVC probe/commit&mdash;decoded from a usbmon capture of
+              the closed <code>leapd</code> talking to the device
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 80ms">
+            <div class="step-name">IR LEDs strobe, sensor streams</div>
+            <div class="step-desc">
+              After bring-up, the device is live: three IR LEDs illuminate the
+              scene and the stereo sensor begins delivering frames over the
+              bulk endpoint
+            </div>
+          </li>
+        </ol>
+        <div class="note" data-reveal>
+          <p>
+            <strong>Everything above was decoded from USB traffic.</strong> The
+            protocol knowledge was obtained by observing the device&rsquo;s own
+            USB traffic with usbmon, not from any SDK source code or
+            documentation. No Ultraleap code, blobs, or SDK output is included
+            or required. See <code>LICENSING.md</code> in the repository for
+            the full clean-room posture.
+          </p>
+        </div>
+      </section>
+
+      <section id="streaming">
+        <h2 data-reveal>Streaming architecture</h2>
+        <p class="section-intro" data-reveal>
+          Once the device is brought up, a robust capture pipeline keeps frames
+          flowing at USB&nbsp;2.0 saturation without tearing or data loss.
+        </p>
+        <div class="card-grid">
+          <div class="card" data-reveal style="--reveal-delay: 0ms">
+            <h3>Frame format</h3>
+            <p>
+              Bulk endpoint <code>0x83</code> delivers UVC payloads: 16,380
+              bytes per transfer (12-byte header + 16,368 pixel bytes). Frames
+              are delimited by EOF bits, with FID-toggle recovery when an EOF
+              payload is lost.
+            </p>
+            <p>
+              One frame = <strong>307,200&nbsp;bytes</strong>: 640&times;240
+              per eye, the two eyes interleaved column-by-column into
+              1280&times;240, 8-bit grayscale, at roughly 112&nbsp;fps.
+            </p>
+          </div>
+          <div class="card" data-reveal style="--reveal-delay: 80ms">
+            <h3>Drain thread + mailbox</h3>
+            <p>
+              A dedicated drain thread running at <code>SCHED_FIFO</code>
+              real-time priority does nothing but service the endpoint into a
+              one-slot mailbox. A writer thread ships the latest frame to
+              stdout and drops frames if the consumer is slow.
+            </p>
+            <p>
+              The endpoint is never blocked on a pipe&mdash;torn frames went
+              from &gt;50% to roughly 1% with this design.
+            </p>
+          </div>
+        </div>
+        <div class="note" data-reveal>
+          <p>
+            <strong>Stream format on stdout:</strong>
+            <code>"LFRM"</code> magic + u32&nbsp;LE frame counter + 307,200
+            raw bytes per frame. Stderr gets a diagnostic line every 128
+            frames (brightness, exposure, LED mask, and frame-integrity
+            counters).
+          </p>
+        </div>
+      </section>
+
+      <section id="controls">
+        <h2 data-reveal>Device controls</h2>
+        <p class="section-intro" data-reveal>
+          Runtime control over the sensor&rsquo;s exposure, IR illumination,
+          and on-device calibration data, all via standard UVC
+          <code>SET_CUR</code> / <code>GET_CUR</code> requests.
+        </p>
+        <div class="status-grid">
+          <div class="status-card" data-reveal style="--reveal-delay: 0ms">
+            <span class="badge"><span class="dot dot-live"></span>Working</span>
+            <h4>Exposure</h4>
+            <p>
+              Camera Terminal (unit&nbsp;2) selector <code>0x0b</code>,
+              4-byte &micro;s little-endian. Effective range roughly
+              100&ndash;1000&nbsp;&micro;s; values above 1000 are near-saturation.
+            </p>
+          </div>
+          <div class="status-card" data-reveal style="--reveal-delay: 80ms">
+            <span class="badge"><span class="dot dot-live"></span>Working</span>
+            <h4>IR LEDs</h4>
+            <p>
+              Processing Unit (unit&nbsp;5) selector <code>0x03</code>.
+              Three independently addressable LEDs (left, center, right) via a
+              bitmask.
+            </p>
+          </div>
+          <div class="status-card" data-reveal style="--reveal-delay: 160ms">
+            <span class="badge"><span class="dot dot-live"></span>Working</span>
+            <h4>Calibration reader</h4>
+            <p>
+              156&nbsp;bytes via &ldquo;property knocking&rdquo;&mdash;write
+              an address to PU sharpness, read a byte back from saturation.
+              Contains per-eye focal/distortion coefficients and the
+              40.01&nbsp;mm stereo baseline.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="tracking">
+        <h2 data-reveal>Tracking pipeline</h2>
+        <p class="section-intro" data-reveal>
+          Per eye, per frame&mdash;the Python reference pipeline runs
+          Monado&rsquo;s openly-licensed Mercury ONNX models to go from raw
+          IR pixels to 21-joint hand skeletons in millimeters.
+        </p>
+        <ol class="pipeline">
+          <li data-reveal style="--reveal-delay: 0ms">
+            <div class="step-name">Detect</div>
+            <div class="step-desc">
+              <code>grayscale_detection_160x160.onnx</code> on the full
+              frame; 2 hand slots, confidence threshold gates noise
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 40ms">
+            <div class="step-name">Crop &amp; orient</div>
+            <div class="step-desc">
+              Square box around each detection, resized to 128&times;128; the
+              keypoint net knows one handedness, so the other hand&rsquo;s
+              crop is mirrored and auto-calibrated per track
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 80ms">
+            <div class="step-name">Keypoints</div>
+            <div class="step-desc">
+              <code>grayscale_keypoint_jan18.onnx</code>: 21 heatmaps
+              (22&times;22), argmax + center-of-mass refine; previous
+              frame&rsquo;s joints feed back as a temporal prior
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 120ms">
+            <div class="step-name">Coast</div>
+            <div class="step-desc">
+              The detector only acquires (it dies past roughly 150&nbsp;mm).
+              Tracked hands keep going by cropping around the previous
+              joints&mdash;survives to 300&nbsp;mm+
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 160ms">
+            <div class="step-name">Smooth</div>
+            <div class="step-desc">
+              Per-joint One-Euro filter, confidence-weighted; still-hand
+              jitter drops to roughly 1.5&nbsp;px
+            </div>
+          </li>
+          <li data-reveal style="--reveal-delay: 200ms">
+            <div class="step-name">Triangulate</div>
+            <div class="step-desc">
+              Stereo-rectified joints from both eyes &rarr; per-joint
+              disparity &rarr; depth (<code>Z&nbsp;=&nbsp;fx&middot;B/d</code>,
+              baseline from on-device calibration) &rarr; 21 joints in
+              millimeters, validated against a ruler
+            </div>
+          </li>
+        </ol>
+        <div class="note" data-reveal>
+          <p>
+            <strong>This pipeline is the reference/validation oracle, not the
+            product.</strong> The production engine is Monado&rsquo;s Mercury
+            hand tracker, fed by OpenMotion&rsquo;s <code>leap_open</code>
+            Monado driver (a C ABI exported from the Rust driver as
+            <code>libopenleap.a</code>). The Python pipeline stays for
+            offline analysis and as the ground truth that Mercury&rsquo;s
+            output is validated against.
+          </p>
+        </div>
+      </section>
+
+      <section id="status">
+        <h2 data-reveal>Status &amp; known gaps</h2>
+        <p class="section-intro" data-reveal>
+          What&rsquo;s confirmed against real hardware, what&rsquo;s validated
+          but pending integration, and what&rsquo;s next.
+        </p>
+        <div class="status-grid">
+          <div class="status-card" data-reveal style="--reveal-delay: 0ms">
+            <span class="badge"><span class="dot dot-live"></span>Confirmed</span>
+            <h4>USB driver</h4>
+            <p>Device bring-up, stereo streaming at roughly 112&nbsp;fps, exposure/LED control, and calibration reader all working on real hardware.</p>
+          </div>
+          <div class="status-card" data-reveal style="--reveal-delay: 80ms">
+            <span class="badge"><span class="dot dot-live"></span>Validated</span>
+            <h4>Python tracking pipeline</h4>
+            <p>2D keypoints + 3D triangulation match a physical ruler. Pinch noise roughly 1&nbsp;px after smoothing. Now the reference oracle, not the product path.</p>
+          </div>
+          <div class="status-card" data-reveal style="--reveal-delay: 160ms">
+            <span class="badge"><span class="dot dot-progress"></span>In progress</span>
+            <h4>Monado Mercury engine</h4>
+            <p>The <code>leap_open</code> Monado driver feeds Mercury for full 3D skeletons. Next: decide niri integration API, tune Mercury jitter, upstream the driver.</p>
+          </div>
+        </div>
+        <h3 data-reveal>What&rsquo;s next</h3>
+        <ul class="plain" data-reveal>
+          <li>
+            <strong>niri integration API.</strong> Choose between a LeapC
+            compatibility shim and a native joint-set protocol for feeding
+            gesture signals into the niri Wayland compositor.
+          </li>
+          <li>
+            <strong>Mercury jitter tuning.</strong> The Python pipeline&rsquo;s
+            One-Euro filter is well-tuned; Mercury&rsquo;s equivalent needs
+            the same pass against real-hand data.
+          </li>
+          <li>
+            <strong>Gesture signal extraction.</strong> Pinch, grab, and swipe
+            with hysteresis, bridging OpenMotion&rsquo;s skeleton output to
+            <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>&rsquo;s
+            gesture interpreter.
+          </li>
+          <li>
+            <strong>Upstream the <code>leap_open</code> driver</strong> to the
+            main Monado repository.
+          </li>
+        </ul>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__notice">
+        <p>OpenMotion is a personal engineering project, not a product.</p>
+        <p>Licensed BSL-1.0 (Boost). No Ultraleap code, blobs, or SDK output is included or required.</p>
+      </div>
+      <nav class="site-footer__links" aria-label="Suite">
+        <a href="https://coleman-sagil.dev/">Home</a>
+        <a href="https://coleman-sagil.dev/LocalLLM/">Local LLM</a>
+        <a href="https://coleman-sagil.dev/IntuiMotion/">IntuiMotion</a>
+        <a href="https://coleman-sagil.dev/OpenMotion/">OpenMotion</a>
+        <a href="https://coleman-sagil.dev/OANDA/">OANDA</a>
+        <a href="https://coleman-sagil.dev/SprayRack/">SprayRack</a>
+        <a href="https://coleman-sagil.dev/SprayRack/Windmaker/">Windmaker</a>
+      </nav>
+      <p class="site-footer__meta">coleman-sagil.dev &mdash; personal and work engineering projects</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('[data-reveal]');
+      if (!('IntersectionObserver' in window) || !els.length) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
