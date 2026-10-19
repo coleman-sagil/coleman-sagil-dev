@@ -668,54 +668,12 @@ td.gesture { color: var(--text); white-space: nowrap; }
 :root[data-theme="dark"] { --cursor-core: var(--tint-highlight); }
 :root[data-theme="light"] { --cursor-core: var(--accent-strong); }
 
-/* ---------- cursor flow (pointer-follow trailing light) ----------
-   A short comet tail of glow samples trailing the pointer, standing in
-   for this project's own "an open, still hand becomes a pointer" idea.
-   Used to be a single dot that eased toward the pointer and toggled
-   opacity 0/1; now a fixed pool of POOL_SIZE small elements (sized in
-   the script below, alongside the full DOM-pool-vs-canvas reasoning
-   for why this stayed plain pooled divs), laid down along the
-   pointer's recent path and individually faded out over a 700ms
-   lifetime each. A moving pointer keeps laying fresh samples faster
-   than old ones expire, so it reads as a continuous fading tail; a
-   stopped pointer just lets its last few samples finish that same
-   700ms fade on their own, no separate "idle" state needed anywhere in
-   this file.
-
-   Every sample shares this one gradient, and opacity/transform are
-   written directly per frame from the script as a real numeric fade
-   curve, not a two-state toggle — so unlike the old single dot there's
-   no CSS transition on opacity here. A transition would be racing
-   values already being interpolated every frame in JS instead of
-   helping them.
-
-   Colored core-to-edge (bright --cursor-core center, through magenta,
-   into wine) rather than a flat tint, echoing the hero-flow wash's
-   three-hue treatment elsewhere on this page. Same
-   color-mix(...,55%,transparent) stop treatment and the same .55/.42
-   dark/light element-opacity split as .hero-flow too, and for the same
-   underlying reason: several of these can overlap near the pointer
-   (most visibly when it moves slowly — see MIN_DISTANCE_PX in the
-   script for the other half of that fix), so the same restraint that
-   keeps hero-flow's wash from printing as a stain on a light
-   background keeps a cluster of overlapping trail samples from
-   composing into a solid ink blob there either.
-
-   Fixed, inert (pointer-events: none on the container and every pooled
-   dot), and purely decorative — never intercepts clicks, drags, or
-   scrolling. Every gate from the single-dot version is preserved
-   exactly in the script: prefers-reduced-motion checked before any
-   requestAnimationFrame loop starts, fine-pointer/hover-capable input
-   required before starting at all, and nothing is ever positioned or
-   shown before a real first pointer position is known. The (hover:
-   none), (pointer: coarse) rule below is a CSS-only backstop for the
-   touch case, so nothing can get stuck rendered at a stale last-tap
-   position; a window blur is handled explicitly in the script instead
-   of relying on this CSS (an aged-out sample clears within 700ms
-   regardless, but blur forces every pooled sample to read as
-   already-expired immediately, so nothing lingers mid-fade at a stale
-   position while the window is out of focus). */
-.cursor-flow {
+/* ---------- cursor canvas (pointer-follow trailing stroke) ----------
+   A smooth continuous line trailing the pointer via <canvas>, replacing
+   the old pooled-div comet dots. Same .55/.42 dark/light element-opacity
+   split as .hero-flow and the old .cursor-flow. Colors read from
+   --cursor-core/--accent2/--accent3 in JS via getComputedStyle. */
+.cursor-canvas {
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -724,28 +682,11 @@ td.gesture { color: var(--text); white-space: nowrap; }
 }
 
 @media (prefers-color-scheme: light) {
-  :root:where(:not([data-theme])) .cursor-flow { opacity: .42; }
+  :root:where(:not([data-theme])) .cursor-canvas { opacity: .42; }
 }
-:root[data-theme="light"] .cursor-flow { opacity: .42; }
-:root[data-theme="dark"] .cursor-flow { opacity: .55; }
-
-.cursor-flow__dot {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  margin: -16px 0 0 -16px;
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    color-mix(in srgb, var(--cursor-core) 55%, transparent) 0%,
-    color-mix(in srgb, var(--accent2) 55%, transparent) 38%,
-    color-mix(in srgb, var(--accent3) 55%, transparent) 68%,
-    transparent 80%);
-  opacity: 0;
-  pointer-events: none;
-}
+:root[data-theme="light"] .cursor-canvas { opacity: .42; }
+:root[data-theme="dark"] .cursor-canvas { opacity: .55; }
 
 @media (hover: none), (pointer: coarse) {
-  .cursor-flow { display: none; }
+  .cursor-canvas { display: none; }
 }

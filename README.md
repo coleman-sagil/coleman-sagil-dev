@@ -9,7 +9,7 @@ Live at https://coleman-sagil.dev
 
 ## Layout
 
-Five independent static sites, each its own Cloudflare Worker, routed by
+Six independent static sites, each its own Cloudflare Worker, routed by
 path under the apex domain (not subdomains):
 
 ```
@@ -26,6 +26,9 @@ sites/
   oanda/          -> coleman-sagil.dev/OANDA
     public/OANDA/
     wrangler.toml
+  openmotion/     -> coleman-sagil.dev/OpenMotion
+    public/OpenMotion/
+    wrangler.toml
   sprayrack/      -> coleman-sagil.dev/SprayRack (calculator + /Calibration form)
     public/SprayRack/
     wrangler.toml
@@ -40,7 +43,7 @@ shared Worker between them.
 and motion tokens. It's copied (not symlinked) into each site's own
 `public/` directory, since Workers assets only serve files inside a site's
 own asset directory — there's no cross-site linking in the deployed bundle.
-A token change has to be re-copied into all five sites by hand.
+A token change has to be re-copied into all six sites by hand.
 
 Routing is path-based: `hub`'s `wrangler.toml` owns the catch-all
 `coleman-sagil.dev/*` route, while each project site owns two more specific
@@ -78,6 +81,7 @@ With those set, deploy each site independently from its own directory:
 cd sites/hub && npx -y wrangler deploy
 cd sites/local-llm && npx -y wrangler deploy
 cd sites/intuimotion && npx -y wrangler deploy
+cd sites/openmotion && npx -y wrangler deploy
 cd sites/oanda && npx -y wrangler deploy
 cd sites/sprayrack && npx -y wrangler deploy
 ```
@@ -93,6 +97,6 @@ npx -y wrangler deploy --dry-run
 
 ## Status
 
-Live and deployed. All five Workers are attached to the
+Live and deployed. All six Workers are attached to the
 `coleman-sagil.dev` zone as described above, and each is also reachable at
 its own `*.workers.dev` subdomain.

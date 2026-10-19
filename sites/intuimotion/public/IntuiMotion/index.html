@@ -45,10 +45,7 @@
         <span class="badge"><span class="dot dot-live"></span>Gesture pipeline: confirmed on live hardware</span>
         <span class="badge"><span class="dot dot-tested"></span>Calibration solvers: unit-tested, synthetic only</span>
         <span class="badge"><span class="dot dot-progress"></span>Camera screen detection: in progress</span>
-        <a class="badge badge--link" href="https://github.com/coleman-sagil/IntuiMotion" target="_blank" rel="noopener">
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.67 0 8.21c0 3.63 2.29 6.71 5.47 7.8.4.08.55-.18.55-.4 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.53-.01-.54.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.09-1.78-.2-3.64-.91-3.64-4.02 0-.89.31-1.62.82-2.19-.08-.2-.36-1.03.08-2.15 0 0 .67-.22 2.2.84a7.4 7.4 0 0 1 4 0c1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.15.51.57.82 1.29.82 2.19 0 3.12-1.87 3.81-3.65 4.02.29.26.54.76.54 1.53 0 1.11-.01 1.99-.01 2.27 0 .22.15.48.55.4A8.22 8.22 0 0 0 16 8.21C16 3.67 12.42 0 8 0Z"/></svg>
-          View source on GitHub
-        </a>
+        <span class="badge">Private repository</span>
       </div>
     </div>
   </header>
@@ -79,8 +76,9 @@
           <p>
             <strong>No live demo on this page.</strong> This is a write-up
             of the project as it stands, not a control panel; running it for
-            real requires the physical Leap Motion sensor and Ultraleap's
-            tracking service installed on the machine in front of you.
+            real requires the physical Leap Motion sensor, with hand tracking
+            now handled by OpenMotion's open-source driver rather than
+            Ultraleap's proprietary service.
           </p>
         </div>
       </section>
@@ -444,168 +442,135 @@
     })();
   </script>
 
-  <div class="cursor-flow" aria-hidden="true"></div>
+  <canvas class="cursor-canvas" aria-hidden="true"></canvas>
   <script>
     (function () {
-      // Required check before this JS-driven animation does anything at
-      // all: a CSS transition/animation duration override can't stop a
-      // requestAnimationFrame loop, so this has to be its own gate.
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      // A pointer-follow trail only means anything with a real, hovering
-      // pointer; skip it on touch (the CSS also hides the element on
-      // coarse/no-hover input as a backstop if this ever runs anyway).
       if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-      var container = document.querySelector('.cursor-flow');
-      if (!container) return;
+      var canvas = document.querySelector('.cursor-canvas');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
 
-      // Trail tuning. A sample fades to fully transparent LIFETIME_MS
-      // after it's laid down (see frame() below), so a pointer that
-      // stops moving needs no special-cased "stop" handling: its most
-      // recent samples just keep aging on their own until they hit
-      // zero. Samples are laid down on a fixed wall-clock interval
-      // rather than once per requestAnimationFrame tick, so the trail's
-      // density and pool size stay constant across displays instead of
-      // scaling with refresh rate (a 144Hz screen firing pointermove
-      // far more often than a 60Hz one would otherwise burn through the
-      // pool 2-3x faster for no visual gain). POOL_SIZE is sized to the
-      // number of samples alive at once at that rate, plus one slot of
-      // slack: a slot only gets reused once its previous occupant has
-      // had strictly more than LIFETIME_MS to finish fading, so a
-      // reused element is always already invisible (opacity 0) at the
-      // moment it's repositioned, never a visible jump-cut.
-      var LIFETIME_MS = 700;
-      var SAMPLE_INTERVAL_MS = 30;
-      var POOL_SIZE = Math.ceil(LIFETIME_MS / SAMPLE_INTERVAL_MS) + 1;
-      // A second gate alongside the time interval: without it, slow or
-      // near-still hand movement (real pointermove events, just tiny
-      // ones) lays down a dozen-plus samples on almost the same spot.
-      // Since every sample shares one gradient, stacking that many
-      // identical, overlapping circles composites into a hard-edged
-      // solid disc instead of a soft glow — the opposite of "light
-      // trailing the pointer". Requiring real on-screen distance
-      // between samples avoids that without touching the time interval
-      // that fast, continuous motion relies on for a smooth tail.
-      var MIN_DISTANCE_PX = 6;
-      var MIN_DISTANCE_SQ = MIN_DISTANCE_PX * MIN_DISTANCE_PX;
+      var LIFETIME = 700;
+      var INTERVAL = 8;
+      var MIN_DIST_SQ = 9;
+      var HEAD_W = 5;
+      var TAIL_W = 0.5;
+      var MAX_PTS = 80;
 
-      // A ring buffer of pooled, reused elements rather than a
-      // <canvas>: this page has no other canvas work, so a canvas
-      // overlay would be a whole second rendering model bolted on for
-      // one effect, and it can't read var(--cursor-core) / var(--accent2)
-      // / var(--accent3) directly — it would need
-      // getComputedStyle(document.documentElement) up front *and* a
-      // prefers-color-scheme matchMedia listener to catch a live OS
-      // theme switch mid-session, on top of a separate resize/DPR-aware
-      // canvas sizing path. A few dozen small pooled divs, each
-      // animated with transform/opacity only (compositor-only
-      // properties — no layout, no repaint-triggering geometry), costs
-      // nothing a 60fps canvas clear+redraw wouldn't also cost, and it
-      // keeps this file's plain-DOM, no-dependencies style like the
-      // single-dot version it replaces. (Deliberately no
-      // `will-change` on the pooled dots below: translate3d's 3D-hack
-      // already prompts GPU compositing per element without it, and
-      // pinning POOL_SIZE always-on compositor layers via will-change
-      // would cost more than the one it saved on the old single-dot
-      // version.)
-      var pool = [];
-      for (var i = 0; i < POOL_SIZE; i++) {
-        var dot = document.createElement('div');
-        dot.className = 'cursor-flow__dot';
-        container.appendChild(dot);
-        pool.push({ el: dot, born: -Infinity, x: 0, y: 0 });
-      }
-      var nextSlot = 0;
-      var lastSampleAt = -Infinity;
-      var lastSampleX = 0, lastSampleY = 0;
-      var haveSample = false;
-      var running = false;
+      var pts = [];
+      var lastT = -Infinity, lastX = 0, lastY = 0, have = false, running = false, dpr = 1;
+      var coreC, a2C, a3C;
 
-      function layDown(x, y, t) {
-        var s = pool[nextSlot];
-        nextSlot = (nextSlot + 1) % POOL_SIZE;
-        s.born = t;
-        s.x = x;
-        s.y = y;
+      function parseRGB(s) {
+        var m = s.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        return m ? [+m[1], +m[2], +m[3]] : [200, 180, 240];
       }
 
-      function frame(t) {
-        var anyAlive = false;
-        for (var i = 0; i < POOL_SIZE; i++) {
-          var s = pool[i];
-          var age = t - s.born;
-          if (age >= LIFETIME_MS) {
-            // Already faded out (or never laid down): leave it at
-            // opacity 0 rather than writing to style every frame for a
-            // dead slot, right up until layDown() reuses it.
-            continue;
+      function readColors() {
+        var el = document.createElement('span');
+        el.style.display = 'none';
+        document.body.appendChild(el);
+        el.style.color = 'var(--cursor-core)';
+        coreC = parseRGB(getComputedStyle(el).color);
+        el.style.color = 'var(--accent2)';
+        a2C = parseRGB(getComputedStyle(el).color);
+        el.style.color = 'var(--accent3)';
+        a3C = parseRGB(getComputedStyle(el).color);
+        el.remove();
+      }
+      readColors();
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+      new MutationObserver(readColors).observe(document.documentElement, {
+        attributes: true, attributeFilter: ['data-theme']
+      });
+
+      function resize() {
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function lerp3(a, b, f) {
+        return [
+          Math.round(a[0] + (b[0] - a[0]) * f),
+          Math.round(a[1] + (b[1] - a[1]) * f),
+          Math.round(a[2] + (b[2] - a[2]) * f)
+        ];
+      }
+
+      function frame(now) {
+        var cut = now - LIFETIME;
+        while (pts.length && pts[0].t < cut) pts.shift();
+        ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+
+        if (pts.length < 2) {
+          if (!pts.length) { running = false; return; }
+          requestAnimationFrame(frame);
+          return;
+        }
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (var i = 1; i < pts.length; i++) {
+          var p0 = pts[i - 1], p1 = pts[i];
+          var age0 = 1 - (now - p0.t) / LIFETIME;
+          var age1 = 1 - (now - p1.t) / LIFETIME;
+          var prog = (age0 + age1) * 0.5;
+          if (prog <= 0) continue;
+
+          var alpha = prog * prog;
+          var w = TAIL_W + (HEAD_W - TAIL_W) * prog;
+
+          var c = prog < 0.5
+            ? lerp3(a3C, a2C, prog * 2)
+            : lerp3(a2C, coreC, (prog - 0.5) * 2);
+
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + alpha + ')';
+          ctx.lineWidth = w;
+
+          if (i >= 2) {
+            var pp = pts[i - 2];
+            var mx0x = (pp.x + p0.x) * 0.5, mx0y = (pp.y + p0.y) * 0.5;
+            var mx1x = (p0.x + p1.x) * 0.5, mx1y = (p0.y + p1.y) * 0.5;
+            ctx.moveTo(mx0x, mx0y);
+            ctx.quadraticCurveTo(p0.x, p0.y, mx1x, mx1y);
+          } else {
+            ctx.moveTo(p0.x, p0.y);
+            ctx.lineTo(p1.x, p1.y);
           }
-          anyAlive = true;
-          var remaining = 1 - age / LIFETIME_MS;
-          // Squaring the remaining-life fraction front-loads the fade:
-          // a sample loses more than half its opacity in its first
-          // quarter-life and spends the rest of its 700ms as a long,
-          // faint tail, instead of dissolving at a uniform rate. That's
-          // what makes it read as a comet (bright head, thin fading
-          // tail) rather than a row of same-brightness dots.
-          var eased = remaining * remaining;
-          s.el.style.opacity = eased;
-          // Shrinking alongside the fade (scale 1 -> 0.4) reinforces
-          // the same tapering-comet read.
-          var scale = 0.4 + 0.6 * remaining;
-          s.el.style.transform = 'translate3d(' + s.x + 'px,' + s.y + 'px,0) scale(' + scale + ')';
+          ctx.stroke();
         }
-        if (anyAlive) {
-          requestAnimationFrame(frame);
-        } else {
-          running = false;
-        }
+        requestAnimationFrame(frame);
       }
 
-      function ensureRunning() {
-        if (!running) {
-          running = true;
-          requestAnimationFrame(frame);
-        }
-      }
+      function go() { if (!running) { running = true; requestAnimationFrame(frame); } }
 
       window.addEventListener('pointermove', function (e) {
         var t = performance.now();
-        var dx = e.clientX - lastSampleX, dy = e.clientY - lastSampleY;
-        var farEnough = !haveSample || (dx * dx + dy * dy) >= MIN_DISTANCE_SQ;
-        if (farEnough && (t - lastSampleAt) >= SAMPLE_INTERVAL_MS) {
-          lastSampleAt = t;
-          lastSampleX = e.clientX;
-          lastSampleY = e.clientY;
-          haveSample = true;
-          layDown(e.clientX, e.clientY, t);
-          ensureRunning();
+        var dx = e.clientX - lastX, dy = e.clientY - lastY;
+        var far = !have || (dx * dx + dy * dy) >= MIN_DIST_SQ;
+        if (far && (t - lastT) >= INTERVAL) {
+          lastT = t;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          have = true;
+          pts.push({ x: e.clientX, y: e.clientY, t: t });
+          if (pts.length > MAX_PTS) pts.shift();
+          go();
         }
       }, { passive: true });
 
       window.addEventListener('blur', function () {
-        // Force every pooled sample to read as already-expired rather
-        // than let them keep aging naturally for up to 700ms out of
-        // view: -Infinity born makes every age computation on the very
-        // next frame() tick land past LIFETIME_MS, and the direct
-        // opacity write here means nothing stays visible even a single
-        // frame before that tick runs (e.g. if no frame is currently
-        // scheduled at all). Deliberately does NOT touch `running`: an
-        // in-flight frame() call, if one is scheduled, will see
-        // anyAlive === false on its own next tick and clear that flag
-        // itself. Touching it here too would race a pointermove landing
-        // before that callback fires — it would see running === false
-        // and start a second, duplicate loop that never stops, since
-        // both loops would then see samples as alive and keep
-        // rescheduling each other forever. haveSample is reset too, so
-        // the next pointermove after refocus always lays a sample
-        // regardless of how far the pointer is from wherever it was
-        // pre-blur.
-        for (var i = 0; i < POOL_SIZE; i++) {
-          pool[i].born = -Infinity;
-          pool[i].el.style.opacity = 0;
-        }
-        haveSample = false;
+        pts.length = 0;
+        have = false;
+        ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
       });
     })();
   </script>
